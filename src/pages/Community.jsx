@@ -8,13 +8,14 @@ import DOMPurify from 'dompurify'
 
 export default function Community() {
   const { user } = useAuth()
-  const { posts, loading, createPost, deletePost } = usePosts()
+  const { posts, loading, createPost, deletePost, toggleLike } = usePosts(user?.id)
   const [newPost, setNewPost] = useState('')
   const [postImage, setPostImage] = useState(null)
   const [postImagePreview, setPostImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
   const [activeCommentPostId, setActiveCommentPostId] = useState(null)
   const [commentText, setCommentText] = useState('')
+  const [likingPostId, setLikingPostId] = useState(null)
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]
@@ -77,16 +78,17 @@ export default function Community() {
     setUploading(false)
   }
 
-  const handleLikePost = async (postId, currentLikes) => {
-    // Simple like toggle (in production, track who liked)
-    const { error } = await supabase
-      .from('posts')
-      .update({ likes: (currentLikes || 0) + 1 })
-      .eq('id', postId)
-
-    if (!error) {
-      // Refresh posts
+  const handleLikePost = async (postId, isLiked) => {
+    if (likingPostId) return // Prevent double-clicks
+    
+    setLikingPostId(postId)
+    const { error } = await toggleLike(postId, isLiked)
+    
+    if (error) {
+      console.error('Error toggling like:', error)
     }
+    
+    setLikingPostId(null)
   }
 
   const handleDeletePost = async (postId) => {
@@ -180,7 +182,9 @@ export default function Community() {
                     </div>
                   </div>
 
-                  {(user?.id === post.author_id || user?.user_metadata?.role === 'admin' || user?.user_metadata?.role === 'counselor') && (
+                  {(user?.id === post.author_id || 
+                    user?.user_metadata?.role === 'admin' || 
+                    user?.user_metadata?.role === 'counselor') && (
                     <button
                       onClick={() => handleDeletePost(post.id)}
                       className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -202,11 +206,17 @@ export default function Community() {
 
                 <div className="flex items-center gap-6 pt-4 border-t border-gray-200">
                   <button
-                    onClick={() => handleLikePost(post.id, post.likes)}
-                    className="flex items-center gap-2 text-gray-600 hover:text-pink-600 transition-colors"
+                    onClick={() => handleLikePost(post.id, post.is_liked)}
+                    disabled={likingPostId === post.id}
+                    className={`flex items-center gap-2 transition-colors ${
+                      post.is_liked ? 'text-pink-600' : 'text-gray-600 hover:text-pink-600'
+                    } ${likingPostId === post.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    <Heart size={20} />
-                    <span className="text-sm">{post.likes || 0}</span>
+                    <Heart 
+                      size={20} 
+                      className={post.is_liked ? 'fill-pink-600' : ''} 
+                    />
+                    <span className="text-sm">{post.like_count}</span>
                   </button>
 
                   <button

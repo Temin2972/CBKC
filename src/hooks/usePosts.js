@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
 
-export function usePosts() {
+export function usePosts(currentUserId) {
   const [posts, setPosts] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -27,7 +27,7 @@ export function usePosts() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [currentUserId])
 
   const fetchPosts = async () => {
     const { data, error } = await supabase
@@ -38,8 +38,51 @@ export function usePosts() {
       `)
       .order('created_at', { ascending: false })
     
-    if (!error) setPosts(data || [])
+    if (!error) {
+      // Add like info to each post
+      const transformedPosts = data?.map(post => ({
+        ...post,
+        like_count: post.liked_by?.length || 0,
+        is_liked: currentUserId ? post.liked_by?.includes(currentUserId) : false
+      })) || []
+      
+      setPosts(transformedPosts)
+    }
     setLoading(false)
+  }
+
+  const toggleLike = async (postId, isCurrentlyLiked) => {
+    try {
+      // Get current post
+      const { data: post } = await supabase
+        .from('posts')
+        .select('liked_by')
+        .eq('id', postId)
+        .single()
+
+      let newLikedBy = post.liked_by || []
+
+      if (isCurrentlyLiked) {
+        // Remove user ID from array
+        newLikedBy = newLikedBy.filter(id => id !== currentUserId)
+      } else {
+        // Add user ID to array (only if not already there)
+        if (!newLikedBy.includes(currentUserId)) {
+          newLikedBy = [...newLikedBy, currentUserId]
+        }
+      }
+
+      // Update the post
+      const { error } = await supabase
+        .from('posts')
+        .update({ liked_by: newLikedBy })
+        .eq('id', postId)
+
+      if (error) throw error
+      return { error: null }
+    } catch (error) {
+      return { error }
+    }
   }
 
   const createPost = async (postData) => {
@@ -69,5 +112,5 @@ export function usePosts() {
     }
   }
 
-  return { posts, loading, createPost, deletePost, refetch: fetchPosts }
+  return { posts, loading, createPost, deletePost, toggleLike, refetch: fetchPosts }
 }
