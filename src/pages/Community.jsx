@@ -86,6 +86,7 @@ export default function Community() {
     
     if (error) {
       console.error('Error toggling like:', error)
+      alert('Không thể thích bài viết. Vui lòng thử lại.')
     }
     
     setLikingPostId(null)

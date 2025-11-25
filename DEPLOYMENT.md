@@ -128,3 +128,9 @@ create trigger on_auth_user_created
 - **Build fails**: Check Node version (use 18.x or higher)
 
 Done! Your app is now live! 🚀
+
+-- Add an array column to store user IDs who liked the post
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS liked_by UUID[] DEFAULT '{}';
+
+-- Create an index for better performance
+CREATE INDEX IF NOT EXISTS idx_posts_liked_by ON posts USING GIN (liked_by);

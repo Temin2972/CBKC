@@ -43,7 +43,7 @@ export function usePosts(currentUserId) {
       const transformedPosts = data?.map(post => ({
         ...post,
         like_count: post.liked_by?.length || 0,
-        is_liked: currentUserId ? post.liked_by?.includes(currentUserId) : false
+        is_liked: currentUserId ? (post.liked_by || []).includes(currentUserId) : false
       })) || []
       
       setPosts(transformedPosts)
@@ -54,11 +54,13 @@ export function usePosts(currentUserId) {
   const toggleLike = async (postId, isCurrentlyLiked) => {
     try {
       // Get current post
-      const { data: post } = await supabase
+      const { data: post, error: fetchError } = await supabase
         .from('posts')
         .select('liked_by')
         .eq('id', postId)
         .single()
+
+      if (fetchError) throw fetchError
 
       let newLikedBy = post.liked_by || []
 
@@ -66,21 +68,40 @@ export function usePosts(currentUserId) {
         // Remove user ID from array
         newLikedBy = newLikedBy.filter(id => id !== currentUserId)
       } else {
-        // Add user ID to array (only if not already there)
+        // Add user ID to array (check if not already there to prevent duplicates)
         if (!newLikedBy.includes(currentUserId)) {
           newLikedBy = [...newLikedBy, currentUserId]
+        } else {
+          // Already liked - this shouldn't happen, but handle it gracefully
+          return { error: null }
         }
       }
 
       // Update the post
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('posts')
         .update({ liked_by: newLikedBy })
         .eq('id', postId)
 
-      if (error) throw error
+      if (updateError) throw updateError
+
+      // Optimistically update local state
+      setPosts(prevPosts => 
+        prevPosts.map(p => 
+          p.id === postId 
+            ? { 
+                ...p, 
+                liked_by: newLikedBy,
+                like_count: newLikedBy.length,
+                is_liked: newLikedBy.includes(currentUserId)
+              }
+            : p
+        )
+      )
+
       return { error: null }
     } catch (error) {
+      console.error('Toggle like error:', error)
       return { error }
     }
   }
