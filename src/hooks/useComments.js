@@ -69,7 +69,10 @@ export function useComments(postId, currentUserId) {
     if (!postId) return
 
     try {
-      const { data, error } = await supabase
+      console.log('Fetching comments for post:', postId)
+      
+      // First, try with the foreign key relationship
+      let { data, error } = await supabase
         .from('comments')
         .select(`
           *,
@@ -77,6 +80,50 @@ export function useComments(postId, currentUserId) {
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true })
+
+      // If foreign key error, fall back to fetching users separately
+      if (error && error.code === 'PGRST200') {
+        console.log('Foreign key not found, using fallback query')
+        
+        // Get comments without join
+        const commentsResult = await supabase
+          .from('comments')
+          .select('*')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true })
+
+        if (commentsResult.error) {
+          throw commentsResult.error
+        }
+
+        // Get unique author IDs
+        const authorIds = [...new Set(commentsResult.data.map(c => c.author_id))]
+        
+        // Fetch all authors
+        const usersResult = await supabase
+          .from('users')
+          .select('id, full_name, role')
+          .in('id', authorIds)
+
+        if (usersResult.error) {
+          console.error('Error fetching users:', usersResult.error)
+        }
+
+        // Map authors to comments
+        const usersMap = {}
+        if (usersResult.data) {
+          usersResult.data.forEach(user => {
+            usersMap[user.id] = user
+          })
+        }
+
+        data = commentsResult.data.map(comment => ({
+          ...comment,
+          author: usersMap[comment.author_id] || null
+        }))
+        
+        error = null
+      }
 
       if (error) {
         console.error('Error fetching comments:', error)
