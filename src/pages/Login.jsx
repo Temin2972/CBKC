@@ -68,7 +68,7 @@ export default function Login() {
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="nguyenvana hoặc counselor@school.com"
+                placeholder="florentino hoặc counselor@school.edu.com"
                 disabled={loading}
               />
               <p className="text-xs text-gray-500 mt-1">

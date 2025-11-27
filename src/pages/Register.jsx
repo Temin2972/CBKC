@@ -104,14 +104,14 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Họ và tên
+                Tên hiển thị ( Có thể không để tên thật)
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Thẻo cutii"
+                placeholder="Florentino"
                 disabled={loading}
               />
             </div>
@@ -125,7 +125,7 @@ export default function Register() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="nguyenvana"
+                placeholder="florentino"
                 disabled={loading}
               />
               <p className="text-xs text-gray-500 mt-1">
