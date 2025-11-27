@@ -1,10 +1,12 @@
 import { MessageCircle, Users, Clock, Shield } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useQuotes } from '../hooks/useQuotes'
 import Navbar from '../components/Layout/Navbar'
 
 export default function Home() {
   const { user } = useAuth()
+  const { quote, loading: quoteLoading } = useQuotes()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
@@ -13,7 +15,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4">
-            Xin chào, {user?.user_metadata?.full_name}! 👋
+            Xin chào, {user?.user_metadata?.full_name || user?.email}! 👋
           </h2>
           <p className="text-xl text-white opacity-90">
             {user?.user_metadata?.role === 'counselor' 
@@ -84,6 +86,22 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        {/* Simple Quote Section */}
+        {!quoteLoading && quote && (
+          <div className="mt-8 max-w-4xl mx-auto">
+            <div className="bg-white/90 rounded-2xl p-6 text-center">
+              <p className="text-lg text-gray-700 italic mb-2">
+                "{quote.content}"
+              </p>
+              {quote.author && (
+                <p className="text-sm text-gray-600">
+                  — {quote.author}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
