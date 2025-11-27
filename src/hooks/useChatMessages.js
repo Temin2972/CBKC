@@ -46,10 +46,10 @@ export function useChatMessages(chatRoomId, currentUserId) {
       const senderIds = [...new Set(messagesData.map(m => m.sender_id))]
       console.log('Fetching senders:', senderIds)
 
-      // Fetch all senders - include role field!
+      // Fetch all senders from public.users (which has role directly)
       const { data: usersData, error: usersError } = await supabase
         .from('users')
-        .select('id, full_name, role, user_metadata')
+        .select('id, full_name, role')
         .in('id', senderIds)
 
       if (usersError) {
@@ -143,7 +143,6 @@ export function useChatMessages(chatRoomId, currentUserId) {
 
       console.log('Message sent:', data)
       
-      // Messages will be updated via real-time subscription
       return { data, error: null }
     } catch (error) {
       console.error('Error sending message:', error)

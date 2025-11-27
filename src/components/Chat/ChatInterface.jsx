@@ -10,7 +10,6 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   const [newMessage, setNewMessage] = useState('')
   const messagesEndRef = useRef(null)
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     scrollToBottom()
   }, [messages])
@@ -49,13 +48,11 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     const diffInHours = (now - date) / (1000 * 60 * 60)
 
     if (diffInHours < 24) {
-      // Show time if today
       return date.toLocaleTimeString('vi-VN', { 
         hour: '2-digit', 
         minute: '2-digit' 
       })
     } else {
-      // Show date and time if older
       return date.toLocaleString('vi-VN', { 
         day: '2-digit',
         month: '2-digit',
@@ -66,10 +63,16 @@ export default function ChatInterface({ chatRoom, currentUser }) {
   }
 
   const getSenderDisplayName = (message) => {
-    if (!message.sender) return 'Người dùng'
+    if (!message.sender) {
+      console.log('No sender data for message:', message)
+      return 'Người dùng'
+    }
     
-    const role = message.sender.user_metadata?.role || message.sender.role
-    const name = message.sender.full_name
+    // Get role from public.users (not user_metadata)
+    const role = message.sender.role
+    const name = message.sender.full_name || 'Ẩn danh'
+    
+    console.log('Sender info:', { role, name, sender: message.sender })
     
     if (role === 'counselor') {
       return `Tư vấn viên ${name}`
@@ -137,7 +140,6 @@ export default function ChatInterface({ chatRoom, currentUser }) {
                       {formatTime(message.created_at)}
                     </span>
 
-                    {/* Delete button (only for own messages) */}
                     {message.is_mine && (
                       <button
                         onClick={() => handleDeleteMessage(message.id)}
