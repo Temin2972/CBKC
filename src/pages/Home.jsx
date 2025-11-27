@@ -64,39 +64,16 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="mt-12 max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">💡 Tại sao chọn chúng tôi?</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div>
-                <div className="text-3xl mb-2">🛡️</div>
-                <h4 className="font-semibold mb-1">Bảo mật tuyệt đối</h4>
-                <p className="text-purple-100 text-sm">Thông tin được mã hóa và bảo vệ</p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">⚡</div>
-                <h4 className="font-semibold mb-1">Hỗ trợ tức thời</h4>
-                <p className="text-purple-100 text-sm">Nhiều tư vấn viên luôn sẵn sàng</p>
-              </div>
-              <div>
-                <div className="text-3xl mb-2">❤️</div>
-                <h4 className="font-semibold mb-1">Cộng đồng thân thiện</h4>
-                <p className="text-purple-100 text-sm">Được chia sẻ và đồng cảm</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Simple Quote Section */}
         {!quoteLoading && quote && (
           <div className="mt-8 max-w-4xl mx-auto">
-            <div className="bg-white/90 rounded-2xl p-6 text-center">
-              <p className="text-lg text-gray-700 italic mb-2">
+            <div className="p-6 text-center">
+              <p className="text-xl text-white">
                 "{quote.content}"
               </p>
               {quote.author && (
-                <p className="text-sm text-gray-600">
-                  — {quote.author}
+                <p className="text-sm text-white">
+                  — {quote.author} —
                 </p>
               )}
             </div>

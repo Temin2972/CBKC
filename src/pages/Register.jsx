@@ -198,13 +198,13 @@ export default function Register() {
 
         {/* Simple Quote Section */}
         {!quoteLoading && quote && (
-          <div className="bg-white/90 rounded-2xl p-6 text-center">
+          <div className="bg-white/90 rounded-3xl shadow-2xl p-6 text-center">
             <p className="text-base text-gray-700 italic mb-2">
               "{quote.content}"
             </p>
             {quote.author && (
               <p className="text-sm text-gray-600">
-                — {quote.author}
+                — {quote.author} —
               </p>
             )}
           </div>

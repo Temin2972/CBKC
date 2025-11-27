@@ -20,7 +20,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <Shield className="text-purple-600" size={32} />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Tâm Lý Học Đường
+              S-Net
             </h1>
           </div>
 

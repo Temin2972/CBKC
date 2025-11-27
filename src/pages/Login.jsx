@@ -39,7 +39,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
+        <div className="bg-white/90 rounded-3xl shadow-2xl p-8 mb-6">
           <div className="text-center mb-8">
             <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
               <Shield size={40} className="text-white" />
@@ -118,13 +118,13 @@ export default function Login() {
 
         {/* Simple Quote Section */}
         {!quoteLoading && quote && (
-          <div className="bg-white/90 rounded-2xl p-6 text-center">
-            <p className="text-base text-gray-700 italic mb-2">
+          <div className="bg-white/90 shadow-2xl rounded-2xl p-6 text-center">
+            <p className="text-base text-gray-700 mb-2">
               "{quote.content}"
             </p>
             {quote.author && (
               <p className="text-sm text-gray-600">
-                — {quote.author}
+                — {quote.author} —
               </p>
             )}
           </div>
