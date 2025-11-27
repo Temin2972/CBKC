@@ -72,7 +72,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
+        <div className="bg-white/90 rounded-3xl shadow-2xl p-8 mb-6">
           <div className="text-center mb-8">
             <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
               <Shield size={40} className="text-white" />
@@ -111,7 +111,7 @@ export default function Register() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
-                placeholder="Nguyễn Văn A"
+                placeholder="Thẻo cutii"
                 disabled={loading}
               />
             </div>

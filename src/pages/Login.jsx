@@ -118,7 +118,7 @@ export default function Login() {
 
         {/* Simple Quote Section */}
         {!quoteLoading && quote && (
-          <div className="bg-white/90 shadow-2xl rounded-2xl p-6 text-center">
+          <div className="bg-white/90 shadow-2xl rounded-3xl p-6 text-center">
             <p className="text-base text-gray-700 mb-2">
               "{quote.content}"
             </p>
