@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { useChatRoom } from '../hooks/useChatRoom'
+import { useQuotes } from '../hooks/useQuotes'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
 import { MessageCircle, Trash2, Plus, AlertCircle } from 'lucide-react'
@@ -11,6 +12,7 @@ export default function StudentChat() {
     user?.id,
     'student'
   )
+  const { quote, loading: quoteLoading } = useQuotes()
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -134,6 +136,22 @@ export default function StudentChat() {
 
             {/* Chat Interface */}
             <ChatInterface chatRoom={chatRoom} currentUser={user} />
+          </div>
+        )}
+
+        {/* Simple Quote Section */}
+        {!quoteLoading && quote && (
+          <div className="mt-8 max-w-4xl mx-auto">
+            <div className="bg-white/90 rounded-2xl shadow-lg p-6 text-center">
+              <p className="text-xl text-gray-800 mb-2">
+                "{quote.content}"
+              </p>
+              {quote.author && (
+                <p className="text-sm text-gray-600">
+                  — {quote.author} —
+                </p>
+              )}
+            </div>
           </div>
         )}
 
