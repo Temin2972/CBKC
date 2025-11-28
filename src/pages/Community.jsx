@@ -4,8 +4,15 @@ import { usePosts } from '../hooks/usePosts'
 import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
 import CommentSection from '../components/Community/CommentSection'
-import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import ContentModerationModal from '../components/Community/ContentModerationModal'
+import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
 import DOMPurify from 'dompurify'
+import { 
+  analyzeContent, 
+  MODERATION_ACTIONS, 
+  FLAG_LEVELS,
+  getModerationMessage 
+} from '../lib/contentModeration'
 
 export default function Community() {
   const { user } = useAuth()
@@ -14,8 +21,18 @@ export default function Community() {
   const [postImage, setPostImage] = useState(null)
   const [postImagePreview, setPostImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
   const [activeCommentPostId, setActiveCommentPostId] = useState(null)
   const [likingPostId, setLikingPostId] = useState(null)
+  
+  // Moderation modal state
+  const [moderationModal, setModerationModal] = useState({
+    isOpen: false,
+    action: null,
+    title: '',
+    message: '',
+    showChatSuggestion: false
+  })
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]
@@ -39,10 +56,128 @@ export default function Community() {
     setPostImagePreview('')
   }
 
+  const closeModerationModal = () => {
+    setModerationModal({
+      isOpen: false,
+      action: null,
+      title: '',
+      message: '',
+      showChatSuggestion: false
+    })
+  }
+
+  // Save flagged content to database
+  const saveFlaggedContent = async (content, analysis, contentType = 'post', contentId = null) => {
+    try {
+      await supabase
+        .from('flagged_content')
+        .insert({
+          user_id: user.id,
+          content_type: contentType,
+          content_id: contentId,
+          content: content,
+          flag_level: analysis.flagLevel,
+          category: analysis.category,
+          keywords: analysis.keywords,
+          reasoning: analysis.reasoning,
+          is_resolved: false
+        })
+    } catch (error) {
+      console.error('Error saving flagged content:', error)
+    }
+  }
+
   const handleCreatePost = async (e) => {
     e.preventDefault()
     if (!newPost.trim() && !postImage) return
 
+    setAnalyzing(true)
+
+    // Analyze content with AI
+    const analysis = await analyzeContent(newPost)
+    console.log('Content analysis:', analysis)
+
+    setAnalyzing(false)
+
+    // Handle based on moderation action
+    if (analysis.action === MODERATION_ACTIONS.BLOCK) {
+      // Aggressive content - block completely
+      const moderationMsg = getModerationMessage(analysis.action, analysis.category)
+      setModerationModal({
+        isOpen: true,
+        action: analysis.action,
+        ...moderationMsg
+      })
+      return
+    }
+
+    if (analysis.action === MODERATION_ACTIONS.REJECT) {
+      // Severe distress - reject but notify counselors
+      await saveFlaggedContent(newPost, analysis, 'post')
+      
+      const moderationMsg = getModerationMessage(analysis.action, analysis.category)
+      setModerationModal({
+        isOpen: true,
+        action: analysis.action,
+        ...moderationMsg
+      })
+      
+      // Clear form even though post was rejected
+      setNewPost('')
+      removeImage()
+      return
+    }
+
+    // Handle PENDING (API unavailable)
+    if (analysis.action === MODERATION_ACTIONS.PENDING) {
+      setUploading(true)
+      let imageUrl = null
+
+      if (postImage) {
+        const fileExt = postImage.name.split('.').pop()
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('post-images')
+          .upload(fileName, postImage)
+
+        if (!uploadError) {
+          const { data } = supabase.storage.from('post-images').getPublicUrl(fileName)
+          imageUrl = data.publicUrl
+        }
+      }
+
+      const sanitizedContent = DOMPurify.sanitize(newPost)
+
+      // Save to pending_content table instead of posts
+      const { error } = await supabase
+        .from('pending_content')
+        .insert({
+          user_id: user.id,
+          content_type: 'post',
+          content: sanitizedContent,
+          image_url: imageUrl,
+          pending_reason: analysis.reasoning,
+          status: 'pending'
+        })
+
+      if (!error) {
+        setNewPost('')
+        removeImage()
+        
+        const moderationMsg = getModerationMessage(analysis.action, analysis.category)
+        setModerationModal({
+          isOpen: true,
+          action: analysis.action,
+          ...moderationMsg
+        })
+      }
+
+      setUploading(false)
+      return
+    }
+
+    // Continue with posting (ALLOW or FLAG_MILD)
     setUploading(true)
     let imageUrl = null
 
@@ -62,15 +197,36 @@ export default function Community() {
 
     const sanitizedContent = DOMPurify.sanitize(newPost)
 
-    const { error } = await createPost({
-      author_id: user.id,
-      content: sanitizedContent,
-      image_url: imageUrl
-    })
+    // Create post with flag level
+    const { data: postData, error } = await supabase
+      .from('posts')
+      .insert({
+        author_id: user.id,
+        content: sanitizedContent,
+        image_url: imageUrl,
+        flag_level: analysis.flagLevel
+      })
+      .select()
+      .single()
 
     if (!error) {
+      // If mild concern, save to flagged content
+      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD && postData) {
+        await saveFlaggedContent(sanitizedContent, analysis, 'post', postData.id)
+      }
+
       setNewPost('')
       removeImage()
+
+      // Show mild notification if flagged
+      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD) {
+        const moderationMsg = getModerationMessage(analysis.action, analysis.category)
+        setModerationModal({
+          isOpen: true,
+          action: analysis.action,
+          ...moderationMsg
+        })
+      }
     }
 
     setUploading(false)
@@ -110,6 +266,16 @@ export default function Community() {
     <div className="min-h-screen bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400">
       <Navbar />
 
+      {/* Moderation Modal */}
+      <ContentModerationModal
+        isOpen={moderationModal.isOpen}
+        onClose={closeModerationModal}
+        action={moderationModal.action}
+        title={moderationModal.title}
+        message={moderationModal.message}
+        showChatSuggestion={moderationModal.showChatSuggestion}
+      />
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold text-white mb-8 text-center">
           Cộng đồng Ẩn danh
@@ -124,6 +290,7 @@ export default function Community() {
               placeholder="Chia sẻ câu chuyện của bạn..."
               className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               rows="4"
+              disabled={uploading || analyzing}
             />
 
             {postImagePreview && (
@@ -152,15 +319,25 @@ export default function Community() {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
+                  disabled={uploading || analyzing}
                 />
               </label>
 
               <button
                 type="submit"
-                disabled={uploading || (!newPost.trim() && !postImage)}
-                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50"
+                disabled={uploading || analyzing || (!newPost.trim() && !postImage)}
+                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {uploading ? 'Đang đăng...' : 'Đăng bài'}
+                {analyzing ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Đang kiểm tra...
+                  </>
+                ) : uploading ? (
+                  'Đang đăng...'
+                ) : (
+                  'Đăng bài'
+                )}
               </button>
             </div>
           </form>

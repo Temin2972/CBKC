@@ -3,10 +3,15 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
 import Navbar from '../components/Layout/Navbar'
+import CautionSection from '../components/Counselor/CautionSection'
+import PendingSection from '../components/Counselor/PendingSection'
 
 export default function Home() {
   const { user } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
+  
+  const isCounselor = user?.user_metadata?.role === 'counselor' || 
+                       user?.user_metadata?.role === 'admin'
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
@@ -18,11 +23,25 @@ export default function Home() {
             Xin chào, {user?.user_metadata?.full_name || user?.email}! 👋
           </h2>
           <p className="text-xl text-white opacity-90">
-            {user?.user_metadata?.role === 'counselor' 
+            {isCounselor 
               ? 'Sẵn sàng hỗ trợ học sinh hôm nay' 
               : 'Bạn cần hỗ trợ gì hôm nay?'}
           </p>
         </div>
+
+        {/* Caution Section - Only for counselors/admins */}
+        {isCounselor && (
+          <div className="mb-8">
+            <CautionSection />
+          </div>
+        )}
+
+        {/* Pending Section - Only for counselors/admins */}
+        {isCounselor && (
+          <div className="mb-8">
+            <PendingSection />
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           <Link
@@ -33,10 +52,12 @@ export default function Home() {
               <MessageCircle size={40} className="text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Chat với Tư vấn viên
+              {isCounselor ? 'Phòng Tư vấn' : 'Chat với Tư vấn viên'}
             </h3>
             <p className="text-gray-600">
-              Kết nối trực tiếp với giáo viên tâm lý để được hỗ trợ ngay lập tức
+              {isCounselor 
+                ? 'Xem và trả lời các yêu cầu tư vấn từ học sinh'
+                : 'Kết nối trực tiếp với giáo viên tâm lý để được hỗ trợ ngay lập tức'}
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
               <Clock size={16} />
@@ -55,7 +76,9 @@ export default function Home() {
               Cộng đồng Ẩn danh
             </h3>
             <p className="text-gray-600">
-              Chia sẻ câu chuyện và kết nối với những người cùng hoàn cảnh
+              {isCounselor 
+                ? 'Giám sát và hỗ trợ trong cộng đồng học sinh'
+                : 'Chia sẻ câu chuyện và kết nối với những người cùng hoàn cảnh'}
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
               <Shield size={16} />
@@ -77,6 +100,33 @@ export default function Home() {
                 </p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Counselor Tips */}
+        {isCounselor && (
+          <div className="mt-8 max-w-4xl mx-auto bg-white/90 rounded-2xl p-6 shadow-lg">
+            <h3 className="font-semibold text-gray-800 mb-3">
+              📋 Lưu ý cho tư vấn viên
+            </h3>
+            <ul className="space-y-2 text-sm text-gray-600">
+              <li className="flex items-start gap-2">
+                <span className="text-red-500 font-bold">•</span>
+                <span><strong>Mức độ khẩn cấp (đỏ):</strong> Học sinh có dấu hiệu tự tử, tự gây thương tích hoặc trầm cảm nặng - cần liên hệ ngay</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-yellow-500 font-bold">•</span>
+                <span><strong>Mức độ theo dõi (vàng):</strong> Học sinh có biểu hiện tiêu cực nhẹ - nên theo dõi và hỗ trợ khi cần</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-purple-500 font-bold">•</span>
+                <span>Nội dung hung hăng/bạo lực sẽ tự động bị chặn</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-purple-500 font-bold">•</span>
+                <span>AI phân tích nội dung để phát hiện sớm các trường hợp cần hỗ trợ</span>
+              </li>
+            </ul>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Send, X } from 'lucide-react'
+import { Send, X, Loader2 } from 'lucide-react'
 
 export default function CommentForm({ 
   onSubmit, 
@@ -16,11 +16,12 @@ export default function CommentForm({
     if (!content.trim() || submitting) return
 
     setSubmitting(true)
-    const { error } = await onSubmit(content)
+    const result = await onSubmit(content)
     
-    if (!error) {
+    // If moderated (blocked/rejected), still clear the form
+    if (!result?.error || result?.moderated) {
       setContent('')
-      if (onCancel) onCancel() // Close reply form after successful submit
+      if (onCancel) onCancel() // Close reply form after submit
     }
     
     setSubmitting(false)
@@ -40,15 +41,20 @@ export default function CommentForm({
       <button
         type="submit"
         disabled={!content.trim() || submitting}
-        className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
       >
-        <Send size={16} />
+        {submitting ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Send size={16} />
+        )}
       </button>
       {onCancel && (
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 transition-colors"
+          disabled={submitting}
+          className="px-4 py-2 bg-gray-200 text-gray-600 rounded-xl hover:bg-gray-300 transition-colors disabled:opacity-50"
         >
           <X size={16} />
         </button>

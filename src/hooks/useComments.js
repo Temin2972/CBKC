@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { 
+  analyzeContent, 
+  MODERATION_ACTIONS, 
+  FLAG_LEVELS 
+} from '../lib/contentModeration'
 
 export function useComments(postId, currentUserId) {
   const [comments, setComments] = useState([])
@@ -155,11 +160,98 @@ export function useComments(postId, currentUserId) {
     return parentComments
   }
 
+  // Save flagged content to database
+  const saveFlaggedContent = async (content, analysis, commentId) => {
+    try {
+      await supabase
+        .from('flagged_content')
+        .insert({
+          user_id: currentUserId,
+          content_type: 'comment',
+          content_id: commentId,
+          content: content,
+          flag_level: analysis.flagLevel,
+          category: analysis.category,
+          keywords: analysis.keywords,
+          reasoning: analysis.reasoning,
+          is_resolved: false
+        })
+    } catch (error) {
+      console.error('Error saving flagged content:', error)
+    }
+  }
+
   const createComment = async (content, parentCommentId = null) => {
     if (!currentUserId) {
-      return { error: new Error('You must be logged in to comment') }
+      return { 
+        error: new Error('You must be logged in to comment'),
+        moderation: null
+      }
     }
 
+    // Analyze content with AI
+    const analysis = await analyzeContent(content)
+    console.log('Comment analysis:', analysis)
+
+    // Handle based on moderation action
+    if (analysis.action === MODERATION_ACTIONS.BLOCK) {
+      // Aggressive content - block completely
+      return { 
+        error: null, 
+        moderation: {
+          blocked: true,
+          action: analysis.action,
+          category: analysis.category
+        }
+      }
+    }
+
+    if (analysis.action === MODERATION_ACTIONS.REJECT) {
+      // Severe distress - reject but notify counselors
+      await saveFlaggedContent(content, analysis, null)
+      
+      return { 
+        error: null, 
+        moderation: {
+          rejected: true,
+          action: analysis.action,
+          category: analysis.category
+        }
+      }
+    }
+
+    // Handle PENDING (API unavailable)
+    if (analysis.action === MODERATION_ACTIONS.PENDING) {
+      try {
+        const { error } = await supabase
+          .from('pending_content')
+          .insert({
+            user_id: currentUserId,
+            content_type: 'comment',
+            post_id: postId,
+            parent_comment_id: parentCommentId,
+            content: content.trim(),
+            pending_reason: analysis.reasoning,
+            status: 'pending'
+          })
+
+        if (error) throw error
+
+        return { 
+          error: null, 
+          moderation: {
+            pending: true,
+            action: analysis.action,
+            category: analysis.category
+          }
+        }
+      } catch (error) {
+        console.error('Error saving pending comment:', error)
+        return { error, moderation: null }
+      }
+    }
+
+    // Continue with posting (ALLOW or FLAG_MILD)
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -167,7 +259,8 @@ export function useComments(postId, currentUserId) {
           post_id: postId,
           author_id: currentUserId,
           parent_comment_id: parentCommentId,
-          content: content.trim()
+          content: content.trim(),
+          flag_level: analysis.flagLevel
         })
         .select()
 
@@ -177,14 +270,26 @@ export function useComments(postId, currentUserId) {
       }
 
       console.log('Comment created:', data)
+
+      // If mild concern, save to flagged content
+      if (analysis.action === MODERATION_ACTIONS.FLAG_MILD && data && data[0]) {
+        await saveFlaggedContent(content.trim(), analysis, data[0].id)
+      }
       
       // Immediately refetch to show the new comment
       await fetchComments()
       
-      return { error: null }
+      return { 
+        error: null, 
+        moderation: analysis.action === MODERATION_ACTIONS.FLAG_MILD ? {
+          flagged: true,
+          action: analysis.action,
+          category: analysis.category
+        } : null
+      }
     } catch (error) {
       console.error('Create comment exception:', error)
-      return { error }
+      return { error, moderation: null }
     }
   }
 
