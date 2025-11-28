@@ -1,24 +1,21 @@
 import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { usePosts } from '../hooks/usePosts'
-import { useAIModeration } from '../hooks/useAIModeration'
 import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
 import CommentSection from '../components/Community/CommentSection'
-import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
+import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import DOMPurify from 'dompurify'
 
 export default function Community() {
   const { user } = useAuth()
   const { posts, loading, createPost, deletePost, toggleLike } = usePosts(user?.id)
-  const { analyzeContent, checking: aiChecking } = useAIModeration()
   const [newPost, setNewPost] = useState('')
   const [postImage, setPostImage] = useState(null)
   const [postImagePreview, setPostImagePreview] = useState('')
   const [uploading, setUploading] = useState(false)
   const [activeCommentPostId, setActiveCommentPostId] = useState(null)
   const [likingPostId, setLikingPostId] = useState(null)
-  const [aiError, setAiError] = useState('')
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0]
@@ -46,33 +43,7 @@ export default function Community() {
     e.preventDefault()
     if (!newPost.trim() && !postImage) return
 
-    setAiError('')
     setUploading(true)
-
-    // AI MODERATION CHECK
-    const moderation = await analyzeContent(newPost, user.id, 'post')
-
-    if (!moderation.allowed) {
-      setUploading(false)
-      if (moderation.severity === 'blocked') {
-        setAiError('⚠️ Bài viết của bạn chứa ngôn từ không phù hợp và đã bị chặn.')
-        setTimeout(() => setAiError(''), 5000)
-      } else if (moderation.severity === 'high') {
-        setAiError('⚠️ Chúng tôi phát hiện bạn có thể đang gặp khó khăn. Bài viết đã được gửi đến tư vấn viên để hỗ trợ. Vui lòng liên hệ với tư vấn viên hoặc người thân.')
-        setNewPost('')
-        removeImage()
-        setTimeout(() => setAiError(''), 8000)
-      }
-      return
-    }
-
-    // If MEDIUM severity, show warning but allow post
-    if (moderation.severity === 'medium') {
-      setAiError('ℹ️ Chúng tôi nhận thấy bạn có vẻ đang lo lắng. Bài viết đã được đăng và tư vấn viên sẽ theo dõi.')
-      setTimeout(() => setAiError(''), 5000)
-    }
-
-    // Continue with normal post creation
     let imageUrl = null
 
     if (postImage) {
@@ -122,6 +93,7 @@ export default function Community() {
   const handleDeletePost = async (postId) => {
     if (!confirm('Bạn có chắc muốn xóa bài viết này?')) return
     
+    // Close comments if this post is active
     if (activeCommentPostId === postId) {
       setActiveCommentPostId(null)
     }
@@ -130,6 +102,7 @@ export default function Community() {
   }
 
   const toggleComments = (postId) => {
+    console.log('Toggling comments for post:', postId)
     setActiveCommentPostId(activeCommentPostId === postId ? null : postId)
   }
 
@@ -151,7 +124,6 @@ export default function Community() {
               placeholder="Chia sẻ câu chuyện của bạn..."
               className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
               rows="4"
-              disabled={aiChecking || uploading}
             />
 
             {postImagePreview && (
@@ -164,21 +136,10 @@ export default function Community() {
                 <button
                   type="button"
                   onClick={removeImage}
-                  disabled={aiChecking || uploading}
                   className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
                 >
                   <X size={18} />
                 </button>
-              </div>
-            )}
-
-            {aiError && (
-              <div className={`mt-3 p-3 rounded-xl text-sm ${
-                aiError.includes('⚠️') 
-                  ? 'bg-red-50 border border-red-200 text-red-700' 
-                  : 'bg-blue-50 border border-blue-200 text-blue-700'
-              }`}>
-                {aiError}
               </div>
             )}
 
@@ -191,16 +152,15 @@ export default function Community() {
                   accept="image/*"
                   onChange={handleImageUpload}
                   className="hidden"
-                  disabled={aiChecking || uploading}
                 />
               </label>
 
               <button
                 type="submit"
-                disabled={aiChecking || uploading || (!newPost.trim() && !postImage)}
+                disabled={uploading || (!newPost.trim() && !postImage)}
                 className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-colors disabled:opacity-50"
               >
-                {aiChecking ? 'Đang kiểm tra...' : uploading ? 'Đang đăng...' : 'Đăng bài'}
+                {uploading ? 'Đang đăng...' : 'Đăng bài'}
               </button>
             </div>
           </form>
