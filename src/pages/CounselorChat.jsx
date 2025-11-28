@@ -27,6 +27,21 @@ export default function CounselorChat() {
     return date.toLocaleDateString('vi-VN')
   }
 
+  const getStudentName = (room) => {
+    // Check if student data exists and has full_name
+    if (room.student?.full_name) {
+      return room.student.full_name
+    }
+    // Fallback to 'Học sinh' if no name available
+    return 'Học sinh'
+  }
+
+  const getStudentInitial = (room) => {
+    // Get first letter of student name, or 'H' as fallback
+    const name = getStudentName(room)
+    return name[0].toUpperCase()
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400">
@@ -95,13 +110,13 @@ export default function CounselorChat() {
                         <div className="flex items-start gap-3">
                           {/* Avatar */}
                           <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                            {room.student?.full_name?.[0] || 'H'}
+                            {getStudentInitial(room)}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             {/* Student Name */}
                             <h3 className="font-semibold text-gray-800 truncate mb-1">
-                              {room.student?.full_name || 'Học sinh'}
+                              {getStudentName(room)}
                             </h3>
 
                             {/* Last Message Time */}
@@ -141,11 +156,11 @@ export default function CounselorChat() {
                 <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      {selectedRoom.student?.full_name?.[0] || 'H'}
+                      {getStudentInitial(selectedRoom)}
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-white">
-                        {selectedRoom.student?.full_name || 'Học sinh'}
+                        {getStudentName(selectedRoom)}
                       </h2>
                       <p className="text-white/90 text-sm">
                         Phòng tư vấn
