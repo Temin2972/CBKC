@@ -24,7 +24,7 @@ export const MODERATION_ACTIONS = {
   PENDING: 'pending'        // API down - hold for counselor review
 }
 
-const MODERATION_PROMPT = `You are a content moderation AI for a mental health support platform for students. Analyze the following content and categorize it.
+const MODERATION_PROMPT = `You are a content moderation AI for a mental health support platform for Vietnamese students. Analyze the following content and categorize it. Pay attention to teenager slangs.
 
 IMPORTANT: Respond ONLY with a valid JSON object, no other text.
 
@@ -36,6 +36,8 @@ Categories:
 5. "self_harm" - Mentions of self-harm, cutting, hurting oneself
 6. "suicide" - Suicidal ideation, thoughts of ending life, wanting to die
 7. "aggressive" - Violent intentions, threats, bullying, hate speech, harmful to others
+8. "spam" - Spam content without any actual meaning (set as unknow if not so confident)
+9. "unknow" - If failed to catagorize to any above
 
 Response format:
 {
@@ -182,6 +184,7 @@ function mapCategoryToAction(analysis) {
       }
 
     case 'aggressive':
+    case 'spam':
       // Block aggressive content
       return {
         ...result,
@@ -193,7 +196,7 @@ function mapCategoryToAction(analysis) {
       // Unknown category, default to allow
       return {
         ...result,
-        action: MODERATION_ACTIONS.ALLOW,
+        action: MODERATION_ACTIONS.PENDING,
         flagLevel: FLAG_LEVELS.NORMAL
       }
   }
@@ -207,7 +210,7 @@ export function getModerationMessage(action, category) {
     case MODERATION_ACTIONS.BLOCK:
       return {
         title: 'Nội dung không được phép',
-        message: 'Bài viết của bạn chứa nội dung không phù hợp và không thể được đăng.',
+        message: 'Bài viết của bạn chứa nội dung spam hoặc không phù hợp và không thể được đăng.',
         showChatSuggestion: false
       }
 
@@ -270,7 +273,8 @@ export function getCategoryLabel(category) {
     'depression': 'Trầm cảm',
     'self_harm': 'Tự gây thương tích',
     'suicide': 'Ý định tự tử',
-    'aggressive': 'Hung hăng/Bạo lực'
+    'aggressive': 'Hung hăng/Bạo lực',
+    'spam': 'Spam'
   }
   return labels[category] || category
 }
