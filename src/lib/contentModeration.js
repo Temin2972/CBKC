@@ -24,7 +24,7 @@ export const MODERATION_ACTIONS = {
   PENDING: 'pending'        // API down - hold for counselor review
 }
 
-const MODERATION_PROMPT = `You are a content moderation AI for a mental health support platform for students. Analyze the following content and categorize it.
+const MODERATION_PROMPT = `You are a content moderation AI for a mental health support platform for Vietnamese students. Analyze the following content and categorize it. Pay special attention to Vietnamese teenager slangs.
 
 IMPORTANT: Respond ONLY with a valid JSON object, no other text.
 
