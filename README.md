@@ -12,4 +12,4 @@
 - **Icons:** Lucide React
 - **Deployment / Hosting:** Vercel
 ## Triển khai
-Bất kỳ ai cũng có thể sử dụng nền tảng nèy để triển khai 1 trang web riêng của họ. Xem thêm tại [DELOYMENT.md](DEPLOYMENT.md).
+Bất kỳ ai cũng có thể sử dụng nền tảng này để triển khai 1 trang web riêng của họ. Xem thêm tại [DELOYMENT.md](DEPLOYMENT.md).
