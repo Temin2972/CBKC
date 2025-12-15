@@ -1,7 +1,8 @@
-import { MessageCircle, Users, Clock, Shield } from 'lucide-react'
+import { MessageCircle, Users, Clock, Shield, Bell } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
+import { useUnreadMessages } from '../hooks/useUnreadMessages'
 import Navbar from '../components/Layout/Navbar'
 import CautionSection from '../components/Counselor/CautionSection'
 import PendingSection from '../components/Counselor/PendingSection'
@@ -10,8 +11,14 @@ export default function Home() {
   const { user } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
   
-  const isCounselor = user?.user_metadata?.role === 'counselor' || 
-                       user?.user_metadata?.role === 'admin'
+  const userRole = user?.user_metadata?.role
+  const isCounselor = userRole === 'counselor' || userRole === 'admin'
+  
+  // Hook theo dõi tin nhắn chưa đọc
+  const { unreadCount, hasNewMessages, loading: unreadLoading } = useUnreadMessages(
+    user?.id,
+    userRole
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
@@ -30,27 +37,77 @@ export default function Home() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Chat Card - với thông báo tin nhắn mới */}
           <Link
             to="/chat"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
+            className={`group p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative ${
+              hasNewMessages 
+                ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-400 animate-pulse-subtle' 
+                : 'bg-white'
+            }`}
           >
-            <div className="inline-block p-4 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <MessageCircle size={40} className="text-blue-600" />
+            {/* Badge tin nhắn mới */}
+            {hasNewMessages && !unreadLoading && (
+              <div className="absolute -top-3 -right-3 flex items-center gap-2">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+                  <div className="relative bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                    <Bell size={14} className="animate-bounce" />
+                    <span>{unreadCount} mới</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className={`inline-block p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform ${
+              hasNewMessages 
+                ? 'bg-gradient-to-br from-orange-400 to-red-400' 
+                : 'bg-gradient-to-br from-blue-100 to-blue-200'
+            }`}>
+              <MessageCircle 
+                size={40} 
+                className={hasNewMessages ? 'text-white' : 'text-blue-600'} 
+              />
             </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+
+            <h3 className={`text-2xl font-bold mb-2 ${
+              hasNewMessages ? 'text-orange-700' : 'text-gray-800'
+            }`}>
               {isCounselor ? 'Phòng Tư vấn' : 'Chat với giáo viên tâm lý'}
             </h3>
-            <p className="text-gray-600">
-              {isCounselor 
-                ? 'Xem và trả lời các yêu cầu tư vấn từ học sinh'
-                : 'Kết nối trực tiếp với giáo viên tâm lý để được hỗ trợ ngay lập tức'}
-            </p>
+
+            {/* Text mô tả thay đổi khi có tin nhắn mới */}
+            {hasNewMessages ? (
+              <div className="space-y-2">
+                <p className="text-orange-800 font-semibold text-lg">
+                  🔔 Bạn có {unreadCount} tin nhắn chưa đọc!
+                </p>
+                <p className="text-orange-600 text-sm">
+                  {isCounselor 
+                    ? 'Học sinh đang chờ phản hồi từ bạn' 
+                    : 'Tư vấn viên đã trả lời bạn'}
+                </p>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                {isCounselor 
+                  ? 'Xem và trả lời các yêu cầu tư vấn từ học sinh'
+                  : 'Kết nối trực tiếp với giáo viên tâm lý để được hỗ trợ ngay lập tức'}
+              </p>
+            )}
+
             <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
               <Clock size={16} />
               <span>Hoạt động: 7:00 - 22:00</span>
             </div>
+
+            {/* Hiệu ứng glow khi có tin nhắn mới */}
+            {hasNewMessages && (
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-orange-400/20 to-red-400/20 pointer-events-none"></div>
+            )}
           </Link>
 
+          {/* Community Card - giữ nguyên */}
           <Link
             to="/community"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"

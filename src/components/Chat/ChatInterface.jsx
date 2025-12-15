@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useChatMessages } from '../../hooks/useChatMessages'
+import { useUnreadMessages } from '../../hooks/useUnreadMessages'
 import { Send, Trash2 } from 'lucide-react'
 
 export default function ChatInterface({ chatRoom, currentUser }) {
@@ -7,12 +8,35 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     chatRoom?.id,
     currentUser?.id
   )
+  const { markMessagesAsRead } = useUnreadMessages(
+    currentUser?.id,
+    currentUser?.user_metadata?.role
+  )
   const [newMessage, setNewMessage] = useState('')
   const messagesEndRef = useRef(null)
+  const hasMarkedAsRead = useRef(false)
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Tự động đánh dấu tin nhắn là đã đọc khi vào chat
+  useEffect(() => {
+    if (chatRoom?.id && currentUser?.id && messages.length > 0 && !hasMarkedAsRead.current) {
+      // Mark messages as read after a short delay to ensure user is viewing
+      const timer = setTimeout(() => {
+        markMessagesAsRead(chatRoom.id)
+        hasMarkedAsRead.current = true
+      }, 1000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [chatRoom?.id, currentUser?.id, messages.length, markMessagesAsRead])
+
+  // Reset flag when chat room changes
+  useEffect(() => {
+    hasMarkedAsRead.current = false
+  }, [chatRoom?.id])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -85,6 +109,12 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     }
   }
 
+  // Kiểm tra xem tin nhắn đã được đọc chưa
+  const isMessageRead = (message) => {
+    if (message.is_mine) return true // Tin nhắn của mình luôn coi như đã đọc
+    return (message.read_by || []).includes(currentUser?.id)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -118,7 +148,7 @@ export default function ChatInterface({ chatRoom, currentUser }) {
                       : 'bg-white text-gray-800 border border-gray-200'
                   }`}
                 >
-                  {/* ALWAYS show sender name */}
+                  {/* Sender name */}
                   <div className={`text-xs font-semibold mb-1 ${
                     message.is_mine ? 'text-purple-200' : 'text-purple-600'
                   }`}>
@@ -130,15 +160,28 @@ export default function ChatInterface({ chatRoom, currentUser }) {
                     {message.content}
                   </p>
 
-                  {/* Timestamp and Delete Button */}
+                  {/* Timestamp, Read status, and Delete Button */}
                   <div className="flex items-center justify-between mt-2 gap-3">
-                    <span
-                      className={`text-xs ${
-                        message.is_mine ? 'text-white/80' : 'text-gray-500'
-                      }`}
-                    >
-                      {formatTime(message.created_at)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-xs ${
+                          message.is_mine ? 'text-white/80' : 'text-gray-500'
+                        }`}
+                      >
+                        {formatTime(message.created_at)}
+                      </span>
+
+                      {/* Read indicator - chỉ hiển thị cho tin nhắn của mình */}
+                      {message.is_mine && (
+                        <span className={`text-xs ${
+                          (message.read_by || []).length > 1 
+                            ? 'text-green-200' 
+                            : 'text-white/60'
+                        }`}>
+                          {(message.read_by || []).length > 1 ? '✓✓ Đã xem' : '✓ Đã gửi'}
+                        </span>
+                      )}
+                    </div>
 
                     {message.is_mine && (
                       <button
