@@ -49,10 +49,10 @@ export default function LandingPage() {
             <Shield size={80} className="text-white" />
           </div>
           <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Nền tảng hỗ trợ
+            Nền tảng hỗ trợ tâm lý học đường
             <br />
             <span className="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
-              Tâm lý học đường
+              Dành cho Fschool
             </span>
           </h2>
           <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
@@ -63,7 +63,7 @@ export default function LandingPage() {
               to="/register"
               className="px-8 py-4 bg-white text-purple-600 rounded-full text-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-2xl flex items-center gap-2"
             >
-              Bắt đầu ngay - Miễn phí
+              Đăng ký ngay
               <ArrowRight size={20} />
             </Link>
             <button
@@ -89,12 +89,12 @@ export default function LandingPage() {
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
             <Heart size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">1000+</div>
+            <div className="text-3xl font-bold">1+</div>
             <div className="text-sm opacity-90">Học sinh</div>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
             <Star size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">4.9/5</div>
+            <div className="text-3xl font-bold">0.0/5</div>
             <div className="text-sm opacity-90">Đánh giá</div>
           </div>
         </div>
@@ -306,7 +306,7 @@ export default function LandingPage() {
             Nền tảng hỗ trợ tâm lý học đường
           </p>
           <p className="text-xs">
-            © 2024 S-Net by CBKC. All rights reserved.
+            © 2025 S-Net by CBKC. All rights reserved.
           </p>
           <div className="mt-4">
             <p className="text-xs">

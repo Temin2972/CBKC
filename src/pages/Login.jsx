@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff } from 'lucide-react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Shield, Eye, EyeOff, ArrowRight } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
 
@@ -14,6 +14,28 @@ export default function Login() {
   const { signIn } = useAuth()
   const { quote, loading: quoteLoading } = useQuotes()
   const navigate = useNavigate()
+  const location = useLocation()
+  
+  // Get the feature user wanted to access
+  const fromFeature = location.state?.from
+
+  const getFeatureMessage = () => {
+    if (fromFeature === 'chat') {
+      return {
+        title: '💬 Bạn muốn sử dụng tính năng Chat với Tư vấn viên',
+        description: 'Đăng nhập để kết nối với các tư vấn viên tâm lý chuyên nghiệp'
+      }
+    }
+    if (fromFeature === 'community') {
+      return {
+        title: '👥 Bạn muốn tham gia Cộng đồng Ẩn danh',
+        description: 'Đăng nhập để chia sẻ và kết nối với những người cùng hoàn cảnh'
+      }
+    }
+    return null
+  }
+
+  const featureMessage = getFeatureMessage()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -39,6 +61,25 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Feature Message */}
+        {featureMessage && (
+          <div className="bg-white/90 rounded-3xl shadow-2xl p-6 mb-4 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
+                <ArrowRight size={24} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-gray-800 mb-1">
+                  {featureMessage.title}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {featureMessage.description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white/90 rounded-3xl shadow-2xl p-8 mb-6">
           <div className="text-center mb-8">
             <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
@@ -114,6 +155,12 @@ export default function Login() {
               Đăng ký ngay
             </Link>
           </p>
+
+          <div className="mt-4 text-center">
+            <Link to="/" className="text-sm text-gray-500 hover:text-gray-700">
+              ← Quay lại trang chủ
+            </Link>
+          </div>
         </div>
 
         {/* Simple Quote Section */}

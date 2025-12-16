@@ -39,7 +39,7 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {/* Chat Card - với thông báo tin nhắn mới */}
           <Link
-            to="/chat"
+            to="https://www.wikipedia.org"
             className={`group p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative ${
               hasNewMessages 
                 ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-400 animate-pulse-subtle' 
@@ -187,6 +187,26 @@ export default function Home() {
           </div>
         )}
       </div>
+      {/* Footer */}
+      <footer className="bg-white/10 backdrop-blur-md border-t border-white/20 py-8">
+        <div className="max-w-7xl mx-auto px-4 text-center text-white/80">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Shield size={24} className="text-white" />
+            <span className="text-xl font-bold text-white">S-Net</span>
+          </div>
+          <p className="text-sm mb-2">
+            Nền tảng hỗ trợ tâm lý học đường
+          </p>
+          <p className="text-xs">
+            © 2025 S-Net by CBKC. All rights reserved.
+          </p>
+          <div className="mt-4">
+            <p className="text-xs">
+              Đường dây nóng hỗ trợ tâm lý: <strong>1800 599 920</strong>
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
