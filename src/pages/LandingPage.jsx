@@ -75,31 +75,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Trust Indicators */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto mt-16">
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
-            <Shield size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">100%</div>
-            <div className="text-sm opacity-90">Bảo mật</div>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
-            <Users size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">24/7</div>
-            <div className="text-sm opacity-90">Hỗ trợ</div>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
-            <Heart size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">1+</div>
-            <div className="text-sm opacity-90">Học sinh</div>
-          </div>
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 text-white">
-            <Star size={32} className="mx-auto mb-2" />
-            <div className="text-3xl font-bold">0.0/5</div>
-            <div className="text-sm opacity-90">Đánh giá</div>
-          </div>
-        </div>
-      </div>
-
       {/* Features Preview Section */}
       <div id="features" className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
@@ -306,7 +281,7 @@ export default function LandingPage() {
             Nền tảng hỗ trợ tâm lý học đường
           </p>
           <p className="text-xs">
-            © 2025 S-Net by CBKC. All rights reserved.
+            © 2025 S-Net by CBKC.
           </p>
           <div className="mt-4">
             <p className="text-xs">
