@@ -136,32 +136,6 @@ export default function Home() {
 
         {/* Additional Features - Facebook & Booking */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-6">
-          {/* Facebook Fanpage */}
-          <a
-            href={FACEBOOK_FANPAGE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative overflow-hidden"
-          >
-            <div className="inline-block p-4 bg-gradient-to-br from-red-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Heart size={40} className="text-red-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-              BTCT6
-              <ExternalLink size={18} className="text-gray-400" />
-            </h3>
-            <p className="text-gray-600">
-              Truy cập fanpage Bức Thư Chiều Thứ 6
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
-              <Heart size={16} className="fill-red-600" />
-              <span>Nhấn để truy cập</span>
-            </div>
-
-            {/* Gradient glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-red-400/10 to-pink-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
-          </a>
-
           {/* Booking Form */}
           <a
             href={BOOKING_FORM_URL}
@@ -188,6 +162,32 @@ export default function Home() {
 
             {/* Gradient glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-teal-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
+          </a>
+
+          {/* Facebook Fanpage */}
+          <a
+            href={FACEBOOK_FANPAGE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative overflow-hidden"
+          >
+            <div className="inline-block p-4 bg-gradient-to-br from-red-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+              <Heart size={40} className="text-red-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+              BTCT6
+              <ExternalLink size={18} className="text-gray-400" />
+            </h3>
+            <p className="text-gray-600">
+              Truy cập fanpage Bức Thư Chiều Thứ 6
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-sm text-red-600">
+              <Heart size={16} className="fill-red-600" />
+              <span>Nhấn để truy cập</span>
+            </div>
+
+            {/* Gradient glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-400/10 to-pink-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
           </a>
         </div>
 
