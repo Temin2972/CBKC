@@ -131,7 +131,7 @@ export default function Home() {
         </div>
         
         
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
           <Link
             to="https://www.facebook.com/Bucthuchieuthu6"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
@@ -147,7 +147,7 @@ export default function Home() {
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
               <Shield size={16} />
-              <span> </span>
+              <span>Chuyển sang Facebook</span>
             </div>
           </Link>
           <Link
