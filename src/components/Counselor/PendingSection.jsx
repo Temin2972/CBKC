@@ -296,21 +296,21 @@ export default function PendingSection() {
                             className="w-full text-left px-4 py-2 hover:bg-yellow-50 text-sm flex items-center gap-2 rounded-t-lg"
                           >
                             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                            Theo dõi (nhẹ)
+                            Cần theo dõi
                           </button>
                           <button
                             onClick={() => handleFlagAndReject(item, FLAG_LEVELS.IMMEDIATE, 'depression')}
                             className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2"
                           >
-                            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            Cần chú ý ngay (trầm cảm)
+                            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                            Cần chú ý
                           </button>
                           <button
                             onClick={() => handleFlagAndReject(item, FLAG_LEVELS.IMMEDIATE, 'self_harm')}
                             className="w-full text-left px-4 py-2 hover:bg-red-50 text-sm flex items-center gap-2 rounded-b-lg"
                           >
                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                            Cần chú ý ngay (tự hại)
+                            Cần can thiệp
                           </button>
                         </div>
                       )}
