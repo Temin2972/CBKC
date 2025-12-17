@@ -131,45 +131,41 @@ export default function Home() {
         </div>
         
         
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
           <Link
-            to="www.facebook.com/Bucthuchieuthu6"
+            to="https://www.facebook.com/Bucthuchieuthu6"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
           >
             <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
               <Users size={40} className="text-purple-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Cộng đồng Ẩn danh
+              BTCT6
             </h3>
             <p className="text-gray-600">
-              {isCounselor 
-                ? 'Giám sát và hỗ trợ trong cộng đồng học sinh'
-                : 'Chia sẻ câu chuyện và kết nối với những người cùng hoàn cảnh'}
+              Truy cập fanpage Bức Thư Chiều Thứ 6
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
               <Shield size={16} />
-              <span>100% Ẩn danh</span>
+              <span> </span>
             </div>
           </Link>
           <Link
-            to="www.docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1"
+            to="https://www.docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer"
           >
             <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
               <Users size={40} className="text-purple-600" />
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Cộng đồng Ẩn danh
+              Đặt lịch
             </h3>
             <p className="text-gray-600">
-              {isCounselor 
-                ? 'Giám sát và hỗ trợ trong cộng đồng học sinh'
-                : 'Chia sẻ câu chuyện và kết nối với những người cùng hoàn cảnh'}
+              Đặt lịch phòng tham vấn tâm lý
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-purple-600">
               <Shield size={16} />
-              <span>100% Ẩn danh</span>
+              <span>Yêu cầu thông tin cá nhân</span>
             </div>
           </Link>
         </div>
