@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -68,6 +69,7 @@ function App() {
           element={<Navigate to={user ? "/home" : "/"} />} 
         />
       </Routes>
+      <Analytics />
     </BrowserRouter>
   )
 }
