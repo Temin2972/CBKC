@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { Home, MessageCircle, Users, Shield, LogOut } from 'lucide-react'
+import { Home, MessageCircle, Users, Shield, LogOut, CalendarClock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 export default function Navbar() {
@@ -47,6 +47,14 @@ export default function Navbar() {
             >
               <Users size={18} />
               Cộng đồng
+            </Link>
+
+            <Link
+              to="/booking"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <CalendarClock size={18} />
+              Đặt lịch
             </Link>
 
             <button

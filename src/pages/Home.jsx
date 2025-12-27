@@ -1,4 +1,4 @@
-import { MessageCircle, Users, Clock, Shield, Bell, Heart, CalendarClock, ExternalLink } from 'lucide-react'
+import { MessageCircle, Users, Clock, Shield, Bell, Heart, CalendarClock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useQuotes } from '../hooks/useQuotes'
@@ -8,7 +8,6 @@ import CautionSection from '../components/Counselor/CautionSection'
 import PendingSection from '../components/Counselor/PendingSection'
 
 const FACEBOOK_FANPAGE_URL = 'https://www.facebook.com/Bucthuchieuthu6' // Fanpage BTCT6
-const BOOKING_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?pli=1' // Form đặt lịch
 
 export default function Home() {
   const { user } = useAuth()
@@ -137,10 +136,8 @@ export default function Home() {
         {/* Additional Features - Facebook & Booking */}
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-6">
           {/* Booking Form */}
-          <a
-            href={BOOKING_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/booking"
             className="group p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all transform hover:-translate-y-1 cursor-pointer relative overflow-hidden"
           >
             <div className="inline-block p-4 bg-gradient-to-br from-green-100 to-teal-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
@@ -148,11 +145,10 @@ export default function Home() {
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               Đặt lịch tư vấn
-              <ExternalLink size={18} className="text-gray-400" />
             </h3>
             <p className="text-gray-600">
               {isCounselor 
-                ? 'Form đặt lịch hẹn'
+                ? 'Xem lịch hẹn của học sinh'
                 : 'Đặt lịch hẹn trực tiếp tại phòng tư vấn'}
             </p>
             <div className="mt-4 flex items-center gap-2 text-sm text-green-600">
@@ -162,7 +158,7 @@ export default function Home() {
 
             {/* Gradient glow effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-green-400/10 to-teal-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-2xl"></div>
-          </a>
+          </Link>
 
           {/* Facebook Fanpage */}
           <a
@@ -176,7 +172,6 @@ export default function Home() {
             </div>
             <h3 className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
               BTCT6
-              <ExternalLink size={18} className="text-gray-400" />
             </h3>
             <p className="text-gray-600">
               Truy cập fanpage Bức Thư Chiều Thứ 6

@@ -8,6 +8,7 @@ import Home from './pages/Home'
 import StudentChat from './pages/StudentChat'
 import CounselorChat from './pages/CounselorChat'
 import Community from './pages/Community'
+import Booking from './pages/Booking'
 import ProtectedRoute from './components/Layout/ProtectedRoute'
 
 function App() {
@@ -61,6 +62,7 @@ function App() {
           />
           
           <Route path="/community" element={<Community />} />
+          <Route path="/booking" element={<Booking />} />
         </Route>
 
         {/* Catch all - redirect based on auth status */}
