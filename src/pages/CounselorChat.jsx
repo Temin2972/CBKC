@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useChatRoom } from '../hooks/useChatRoom'
+import { useBroadcastOnline } from '../hooks/useOnlineStatus'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
-import { MessageCircle, Users, Clock } from 'lucide-react'
+import { MessageCircle, Users, Clock, EyeOff, Eye, Shield } from 'lucide-react'
 
 export default function CounselorChat() {
   const { user } = useAuth()
   const { roomId } = useParams() // Get roomId from URL if present
-  const { allChatRooms, loading } = useChatRoom(user?.id, 'counselor')
+  const { allChatRooms, loading } = useChatRoom(user?.id, user?.user_metadata?.role)
   const [selectedRoom, setSelectedRoom] = useState(null)
+  
+  // Broadcast online status để students thấy
+  useBroadcastOnline(user?.id)
 
   // Auto-select room when roomId is in URL or when rooms load
   useEffect(() => {
@@ -40,18 +44,24 @@ export default function CounselorChat() {
   }
 
   const getStudentName = (room) => {
-    // Check if student data exists and has full_name
     if (room.student?.full_name) {
       return room.student.full_name
     }
-    // Fallback to 'Học sinh' if no name available
     return 'Học sinh'
   }
 
   const getStudentInitial = (room) => {
-    // Get first letter of student name, or 'H' as fallback
     const name = getStudentName(room)
     return name[0].toUpperCase()
+  }
+
+  // Check if room is private and assigned to current counselor
+  const isPrivateRoom = (room) => {
+    return room.counselor_id !== null
+  }
+
+  const isMyPrivateRoom = (room) => {
+    return room.counselor_id === user?.id
   }
 
   if (loading) {
@@ -95,6 +105,11 @@ export default function CounselorChat() {
                     </span>
                   </div>
                 </div>
+                {user?.user_metadata?.role === 'counselor' && (
+                  <p className="text-white/80 text-xs mt-1">
+                    Hiển thị chat chung và chat riêng của bạn
+                  </p>
+                )}
               </div>
 
               {/* Chat Room List */}
@@ -111,35 +126,63 @@ export default function CounselorChat() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-200">
-                    {allChatRooms.map((room) => (
-                      <button
-                        key={room.id}
-                        onClick={() => setSelectedRoom(room)}
-                        className={`w-full px-4 py-4 hover:bg-purple-50 transition-colors text-left ${
-                          selectedRoom?.id === room.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          {/* Avatar */}
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                            {getStudentInitial(room)}
-                          </div>
+                    {allChatRooms.map((room) => {
+                      const isPrivate = isPrivateRoom(room)
+                      const isMyPrivate = isMyPrivateRoom(room)
+                      
+                      return (
+                        <button
+                          key={room.id}
+                          onClick={() => setSelectedRoom(room)}
+                          className={`w-full px-4 py-4 hover:bg-purple-50 transition-colors text-left relative ${
+                            selectedRoom?.id === room.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Avatar */}
+                            <div className="relative">
+                              <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                {getStudentInitial(room)}
+                              </div>
+                              
+                              {/* Private indicator badge */}
+                              {isPrivate && (
+                                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${
+                                  isMyPrivate ? 'bg-purple-500' : 'bg-gray-400'
+                                }`} title={isMyPrivate ? 'Chat riêng của bạn' : 'Chat riêng của tư vấn viên khác'}>
+                                  <EyeOff size={10} className="text-white" />
+                                </div>
+                              )}
+                            </div>
 
-                          <div className="flex-1 min-w-0">
-                            {/* Student Name */}
-                            <h3 className="font-semibold text-gray-800 truncate mb-1">
-                              {getStudentName(room)}
-                            </h3>
+                            <div className="flex-1 min-w-0">
+                              {/* Student Name with privacy indicator */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-gray-800 truncate">
+                                  {getStudentName(room)}
+                                </h3>
+                                {isPrivate && (
+                                  <EyeOff size={14} className={isMyPrivate ? 'text-purple-600' : 'text-gray-400'} />
+                                )}
+                              </div>
 
-                            {/* Last Message Time */}
-                            <div className="flex items-center gap-1 text-xs text-gray-500">
-                              <Clock size={12} />
-                              <span>{formatLastMessageTime(room.last_message_at)}</span>
+                              {/* Privacy status text */}
+                              {isPrivate && (
+                                <p className={`text-xs mb-1 ${isMyPrivate ? 'text-purple-600 font-medium' : 'text-gray-400'}`}>
+                                  {isMyPrivate ? '🔒 Chat riêng của bạn' : '🔒 Chat riêng'}
+                                </p>
+                              )}
+
+                              {/* Last Message Time */}
+                              <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <Clock size={12} />
+                                <span>{formatLastMessageTime(room.last_message_at)}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -167,19 +210,46 @@ export default function CounselorChat() {
                 {/* Chat Header */}
                 <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg relative">
                       {getStudentInitial(selectedRoom)}
+                      {isPrivateRoom(selectedRoom) && (
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                          <EyeOff size={12} className="text-purple-600" />
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white">
-                        {getStudentName(selectedRoom)}
-                      </h2>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h2 className="text-xl font-bold text-white">
+                          {getStudentName(selectedRoom)}
+                        </h2>
+                        {isPrivateRoom(selectedRoom) && (
+                          <EyeOff size={18} className="text-white/80" />
+                        )}
+                      </div>
                       <p className="text-white/90 text-sm">
-                        Phòng tư vấn
+                        {isMyPrivateRoom(selectedRoom) 
+                          ? '🔒 Chat riêng với bạn (chỉ bạn và admin thấy)'
+                          : isPrivateRoom(selectedRoom)
+                            ? '🔒 Chat riêng (admin có thể xem)'
+                            : 'Phòng tư vấn chung'
+                        }
                       </p>
                     </div>
                   </div>
                 </div>
+
+                {/* Privacy Notice for shared private rooms (admin only) */}
+                {isPrivateRoom(selectedRoom) && !isMyPrivateRoom(selectedRoom) && user?.user_metadata?.role === 'admin' && (
+                  <div className="bg-yellow-50 border-b border-yellow-200 px-6 py-3">
+                    <div className="flex items-center gap-2 text-sm text-yellow-800">
+                      <Shield size={16} />
+                      <span>
+                        Đây là chat riêng của tư vấn viên khác. Bạn xem được vì bạn là admin (để đảm bảo an toàn).
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Chat Interface */}
                 <ChatInterface chatRoom={selectedRoom} currentUser={user} />
@@ -195,27 +265,36 @@ export default function CounselorChat() {
           </h3>
           <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-600">
             <div>
-              <p className="font-semibold text-purple-600 mb-2">Trách nhiệm</p>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <Eye size={16} />
+                Chat chung
+              </p>
               <ul className="space-y-1">
-                <li>• Trả lời nhanh chóng và chuyên nghiệp</li>
-                <li>• Tôn trọng quyền riêng tư học sinh</li>
+                <li>• Tất cả tư vấn viên đều thấy</li>
+                <li>• Phù hợp cho hỗ trợ nhanh</li>
+                <li>• Có thể cùng nhau tư vấn</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <EyeOff size={16} />
+                Chat riêng
+              </p>
+              <ul className="space-y-1">
+                <li>• Chỉ bạn và admin thấy</li>
+                <li>• Học sinh chọn tư vấn viên cụ thể</li>
+                <li>• Đảm bảo riêng tư cao hơn</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold text-purple-600 mb-2 flex items-center gap-1">
+                <Shield size={16} />
+                Trách nhiệm
+              </p>
+              <ul className="space-y-1">
+                <li>• Trả lời nhanh và chuyên nghiệp</li>
+                <li>• Tôn trọng quyền riêng tư</li>
                 <li>• Lắng nghe và thấu hiểu</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold text-purple-600 mb-2">Lưu ý</p>
-              <ul className="space-y-1">
-                <li>• Tất cả tư vấn viên đều thấy cùng tin nhắn</li>
-                <li>• Tên bạn sẽ hiển thị với mỗi tin nhắn</li>
-                <li>• Phối hợp với các tư vấn viên khác</li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold text-purple-600 mb-2">Thực hành tốt</p>
-              <ul className="space-y-1">
-                <li>• Sử dụng ngôn ngữ ấm áp, thân thiện</li>
-                <li>• Tránh phán xét</li>
-                <li>• Khuyến khích chia sẻ</li>
               </ul>
             </div>
           </div>

@@ -3,11 +3,12 @@ import { useAuth } from '../hooks/useAuth'
 import { useChatRoom } from '../hooks/useChatRoom'
 import { useQuotes } from '../hooks/useQuotes'
 import { useCounselors } from '../hooks/useCounselors'
+import { useBroadcastOnline } from '../hooks/useOnlineStatus'
 import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
 import CounselorSelector from '../components/Chat/CounselorSelector'
-import { MessageCircle, Trash2, Plus, AlertCircle, Users, ChevronLeft } from 'lucide-react'
+import { MessageCircle, Trash2, Plus, AlertCircle, Users, Eye, EyeOff } from 'lucide-react'
 
 export default function StudentChat() {
   const { user } = useAuth()
@@ -18,9 +19,17 @@ export default function StudentChat() {
   const { quote, loading: quoteLoading } = useQuotes()
   const { counselors, loading: counselorsLoading } = useCounselors()
   
+  // Broadcast online status
+  useBroadcastOnline(user?.id)
+  
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showCounselorSelector, setShowCounselorSelector] = useState(false)
+
+  // Get counselor info if this is a private chat
+  const privateCounselor = chatRoom?.counselor_id 
+    ? counselors.find(c => c.id === chatRoom.counselor_id)
+    : null
 
   const handleShowCounselorSelector = () => {
     setShowCounselorSelector(true)
@@ -30,56 +39,69 @@ export default function StudentChat() {
     setShowCounselorSelector(false)
   }
 
-  const handleSelectCounselor = async (selectedCounselor) => {
+  const handleSelectCounselor = async (selectedCounselor, isPrivate) => {
     setCreating(true)
     setShowCounselorSelector(false)
 
-    // Tạo phòng chat
-    const { data: newRoom, error } = await createChatRoom()
-    
-    if (error) {
-      alert('Không thể tạo phòng chat. Vui lòng thử lại.')
-      setCreating(false)
-      return
-    }
+    try {
+      // Tạo phòng chat với counselor_id nếu là private
+      const roomData = {
+        student_id: user.id,
+        counselor_id: (isPrivate && selectedCounselor) ? selectedCounselor.id : null
+      }
 
-    // Nếu có chọn tư vấn viên, gửi tin nhắn tự động
-    if (selectedCounselor && newRoom) {
-      const preferenceMessage = `👋 Xin chào! Em mong muốn được tư vấn viên ${selectedCounselor.displayName} hỗ trợ. Cảm ơn các thầy/cô!`
+      const { data: newRoom, error: createError } = await supabase
+        .from('chat_rooms')
+        .insert(roomData)
+        .select()
+        .single()
       
-      try {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            chat_room_id: newRoom.id,
-            sender_id: user.id,
-            content: preferenceMessage
-          })
-      } catch (err) {
-        console.error('Error sending preference message:', err)
+      if (createError) {
+        console.error('Error creating chat room:', createError)
+        alert('Không thể tạo phòng chat. Vui lòng thử lại.')
+        setCreating(false)
+        return
       }
-    } else if (newRoom) {
-      // Không chọn tư vấn viên cụ thể - gửi tin nhắn chào mừng
-      const welcomeMessage = `👋 Xin chào! Em cần được tư vấn. Mong các thầy/cô hỗ trợ em ạ!`
+
+      // Gửi tin nhắn chào mừng phù hợp
+      let welcomeMessage = ''
       
-      try {
-        await supabase
-          .from('chat_messages')
-          .insert({
-            chat_room_id: newRoom.id,
-            sender_id: user.id,
-            content: welcomeMessage
-          })
-      } catch (err) {
-        console.error('Error sending welcome message:', err)
+      if (isPrivate && selectedCounselor) {
+        // Private chat - chỉ counselor được chọn thấy
+        welcomeMessage = `🔒 Xin chào thầy/cô ${selectedCounselor.displayName}! Em muốn được tư vấn riêng với thầy/cô. Em cảm ơn ạ!`
+      } else if (selectedCounselor && !isPrivate) {
+        // Preferred counselor nhưng vẫn là chat chung
+        welcomeMessage = `👋 Xin chào! Em mong muốn được tư vấn viên ${selectedCounselor.displayName} hỗ trợ (nhưng các thầy/cô khác cũng có thể giúp em ạ). Cảm ơn ạ!`
+      } else {
+        // Chat chung - không chọn ai cả
+        welcomeMessage = `👋 Xin chào! Em cần được tư vấn. Mong các thầy/cô hỗ trợ em ạ!`
       }
+      
+      await supabase
+        .from('chat_messages')
+        .insert({
+          chat_room_id: newRoom.id,
+          sender_id: user.id,
+          content: welcomeMessage
+        })
+      
+      // Force refetch để cập nhật UI
+      window.location.reload()
+      
+    } catch (err) {
+      console.error('Error in handleSelectCounselor:', err)
+      alert('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setCreating(false)
     }
-    
-    setCreating(false)
   }
 
   const handleDeleteChatRoom = async () => {
-    if (!confirm('Bạn có chắc muốn xóa phòng chat này? Tất cả tin nhắn sẽ bị xóa vĩnh viễn.')) {
+    const confirmMsg = privateCounselor
+      ? `Bạn có chắc muốn xóa cuộc trò chuyện bí mật với ${privateCounselor.displayName}? Tất cả tin nhắn sẽ bị xóa vĩnh viễn.`
+      : 'Bạn có chắc muốn xóa phòng chat này? Tất cả tin nhắn sẽ bị xóa vĩnh viễn.'
+    
+    if (!confirm(confirmMsg)) {
       return
     }
 
@@ -135,7 +157,7 @@ export default function StudentChat() {
                     Tạo phòng tư vấn để kết nối với các tư vấn viên
                   </p>
                   <p className="text-sm text-gray-500 mb-6">
-                    Tất cả tư vấn viên đều có thể xem và trả lời tin nhắn của bạn
+                    Bạn có thể chọn chat chung hoặc chat riêng với một tư vấn viên
                   </p>
                 </div>
 
@@ -201,12 +223,23 @@ export default function StudentChat() {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             {/* Chat Header */}
             <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1">
-                  Phòng tư vấn của bạn
-                </h2>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-bold text-white">
+                    {privateCounselor 
+                      ? `Tư vấn riêng với ${privateCounselor.displayName}`
+                      : 'Phòng tư vấn của bạn'
+                    }
+                  </h2>
+                  {privateCounselor && (
+                    <EyeOff size={20} className="text-white/80" />
+                  )}
+                </div>
                 <p className="text-white/90 text-sm">
-                  Các tư vấn viên đang sẵn sàng hỗ trợ bạn
+                  {privateCounselor 
+                    ? `🔒 Chỉ ${privateCounselor.displayName} và quản trị viên thấy cuộc trò chuyện này`
+                    : 'Các tư vấn viên đang sẵn sàng hỗ trợ bạn'
+                  }
                 </p>
               </div>
               <button
@@ -248,7 +281,11 @@ export default function StudentChat() {
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-start gap-2">
               <span className="text-purple-500 font-bold">•</span>
-              <span>Bạn có thể chọn tư vấn viên mà bạn muốn khi tạo phòng</span>
+              <span><strong>Chat chung:</strong> Tất cả tư vấn viên đều thấy và có thể trả lời - phù hợp khi cần hỗ trợ nhanh</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-purple-500 font-bold">•</span>
+              <span><strong>Câu chuyện bí mật:</strong> Chỉ tư vấn viên được chọn thấy - phù hợp cho vấn đề riêng tư</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-500 font-bold">•</span>
@@ -261,10 +298,6 @@ export default function StudentChat() {
             <li className="flex items-start gap-2">
               <span className="text-purple-500 font-bold">•</span>
               <span>Bạn có thể xóa phòng chat bất cứ lúc nào</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-purple-500 font-bold">•</span>
-              <span>Tên tư vấn viên sẽ hiển thị bên cạnh mỗi tin nhắn của họ</span>
             </li>
           </ul>
         </div>

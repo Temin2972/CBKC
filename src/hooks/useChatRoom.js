@@ -18,7 +18,7 @@ export function useChatRoom(userId, userRole) {
       fetchStudentChatRoom()
       subscribeToStudentChatRoom()
     } else if (userRole === 'counselor' || userRole === 'admin') {
-      // Counselors: fetch all active chat rooms
+      // Counselors: fetch chat rooms they have access to
       fetchAllChatRooms()
       subscribeToCounselorChatRooms()
     }
@@ -36,7 +36,10 @@ export function useChatRoom(userId, userRole) {
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
-        .select('*')
+        .select(`
+          *,
+          counselor:users!chat_rooms_counselor_id_fkey(id, full_name, role)
+        `)
         .eq('student_id', userId)
         .single()
 
@@ -134,36 +137,7 @@ export function useChatRoom(userId, userRole) {
 
   const fetchAllChatRooms = async () => {
     try {
-      const { data, error } = await supabase
-        .from('chat_rooms')
-        .select(`
-          *,
-          student:users!chat_rooms_student_id_fkey(id, full_name, role)
-        `)
-        .eq('status', 'active')
-        .order('last_message_at', { ascending: false })
-
-      if (error) throw error
-
-      // If foreign key doesn't work, fall back to separate queries
-      if (!data || (data.length > 0 && !data[0].student)) {
-        return fetchAllChatRoomsFallback()
-      }
-
-      setAllChatRooms(data || [])
-    } catch (err) {
-      console.error('Exception fetching chat rooms:', err)
-      setError(err)
-      // Try fallback
-      fetchAllChatRoomsFallback()
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchAllChatRoomsFallback = async () => {
-    try {
-      // Get chat rooms
+      // Fetch ALL active chat rooms first
       const { data: rooms, error: roomsError } = await supabase
         .from('chat_rooms')
         .select('*')
@@ -181,7 +155,7 @@ export function useChatRoom(userId, userRole) {
       // Get student IDs
       const studentIds = rooms.map(r => r.student_id)
 
-      // Get students - only select columns that exist in your users table
+      // Get students info
       const { data: students, error: studentsError } = await supabase
         .from('users')
         .select('id, full_name, role')
@@ -204,9 +178,25 @@ export function useChatRoom(userId, userRole) {
         student: studentsMap[room.student_id] || null
       }))
 
-      setAllChatRooms(roomsWithStudents)
+      // FILTER BASED ON ROLE AND counselor_id
+      let filteredRooms = roomsWithStudents
+
+      if (userRole === 'counselor') {
+        // Counselors can ONLY see:
+        // 1. Public rooms (counselor_id = null)
+        // 2. Private rooms assigned to them (counselor_id = their id)
+        filteredRooms = roomsWithStudents.filter(room => 
+          room.counselor_id === null || room.counselor_id === userId
+        )
+      } else if (userRole === 'admin') {
+        // Admins can see ALL rooms (no filtering)
+        filteredRooms = roomsWithStudents
+      }
+
+      setAllChatRooms(filteredRooms)
     } catch (err) {
-      console.error('Fallback fetch failed:', err)
+      console.error('Exception fetching chat rooms:', err)
+      setError(err)
       setAllChatRooms([])
     } finally {
       setLoading(false)
