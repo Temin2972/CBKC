@@ -4,6 +4,7 @@ import { useChatRoom } from '../hooks/useChatRoom'
 import { useQuotes } from '../hooks/useQuotes'
 import { useCounselors } from '../hooks/useCounselors'
 import { useBroadcastOnline } from '../hooks/useOnlineStatus'
+import { createNotification } from '../hooks/useNotifications'
 import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
@@ -39,6 +40,55 @@ export default function StudentChat() {
     setShowCounselorSelector(false)
   }
 
+  // Hàm tạo thông báo cho tư vấn viên khi được chọn
+  const notifyCounselorSelected = async (counselorId, isPrivate, studentName) => {
+    try {
+      const counselorName = counselors.find(c => c.id === counselorId)?.displayName || 'Tư vấn viên'
+      
+      // Tạo thông báo cho counselor được chọn
+      await createNotification(
+        counselorId,
+        isPrivate ? 'private_chat_request' : 'student_selected',
+        isPrivate ? '🔒 Yêu cầu chat riêng mới' : '👋 Học sinh chọn bạn',
+        isPrivate 
+          ? `${studentName} muốn được tư vấn riêng với bạn`
+          : `${studentName} ưu tiên tư vấn với bạn (chat chung)`,
+        '/chat',
+        {
+          student_id: user.id,
+          is_private: isPrivate
+        }
+      )
+
+      // Nếu là private chat, thông báo cho admin
+      if (isPrivate) {
+        const { data: admins } = await supabase
+          .from('users')
+          .select('id')
+          .eq('role', 'admin')
+        
+        if (admins && admins.length > 0) {
+          for (const admin of admins) {
+            await createNotification(
+              admin.id,
+              'private_chat_request',
+              '🔒 Chat riêng mới được tạo',
+              `${studentName} đã tạo chat riêng với ${counselorName}`,
+              '/chat',
+              {
+                student_id: user.id,
+                counselor_id: counselorId,
+                is_private: true
+              }
+            )
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error notifying counselor:', error)
+    }
+  }
+
   const handleSelectCounselor = async (selectedCounselor, isPrivate) => {
     setCreating(true)
     setShowCounselorSelector(false)
@@ -69,9 +119,25 @@ export default function StudentChat() {
       if (isPrivate && selectedCounselor) {
         // Private chat - chỉ counselor được chọn thấy
         welcomeMessage = `🔒 Xin chào thầy/cô ${selectedCounselor.displayName}! Em muốn được tư vấn riêng với thầy/cô. Em cảm ơn ạ!`
+        
+        // TẠO THÔNG BÁO cho counselor được chọn
+        await notifyCounselorSelected(
+          selectedCounselor.id, 
+          true, 
+          user.user_metadata?.full_name || 'Học sinh'
+        )
+        
       } else if (selectedCounselor && !isPrivate) {
         // Preferred counselor nhưng vẫn là chat chung
         welcomeMessage = `👋 Xin chào! Em mong muốn được tư vấn viên ${selectedCounselor.displayName} hỗ trợ (nhưng các thầy/cô khác cũng có thể giúp em ạ). Cảm ơn ạ!`
+        
+        // TẠO THÔNG BÁO cho counselor được chọn (ưu tiên)
+        await notifyCounselorSelected(
+          selectedCounselor.id, 
+          false, 
+          user.user_metadata?.full_name || 'Học sinh'
+        )
+        
       } else {
         // Chat chung - không chọn ai cả
         welcomeMessage = `👋 Xin chào! Em cần được tư vấn. Mong các thầy/cô hỗ trợ em ạ!`

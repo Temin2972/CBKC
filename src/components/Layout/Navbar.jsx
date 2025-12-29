@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { Home, MessageCircle, Users, Shield, LogOut, CalendarClock } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
+import NotificationBell from '../Notifications/NotificationBell'
 
 export default function Navbar() {
   const { user, signOut } = useAuth()
@@ -56,6 +57,9 @@ export default function Navbar() {
               <CalendarClock size={18} />
               Đặt lịch
             </Link>
+
+            {/* Notification Bell */}
+            <NotificationBell userId={user?.id} />
 
             <button
               onClick={handleLogout}

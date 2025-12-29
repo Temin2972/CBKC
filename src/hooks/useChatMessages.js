@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabaseClient'
+import { createNotification } from './useNotifications'
 
 export function useChatMessages(chatRoomId, currentUserId) {
   const [messages, setMessages] = useState([])
@@ -96,6 +97,9 @@ export function useChatMessages(chatRoomId, currentUserId) {
         (payload) => {
           console.log('New message received:', payload)
           fetchMessages() // Refetch to get sender info
+          
+          // TẠO THÔNG BÁO cho người nhận
+          handleNewMessageNotification(payload.new)
         }
       )
       .on(
@@ -116,6 +120,131 @@ export function useChatMessages(chatRoomId, currentUserId) {
       })
 
     return channel
+  }
+
+  // Hàm tạo thông báo cho tin nhắn mới
+  const handleNewMessageNotification = async (newMessage) => {
+    try {
+      // Không tạo thông báo cho tin nhắn của chính mình
+      if (newMessage.sender_id === currentUserId) {
+        return
+      }
+
+      // Lấy thông tin chat room và sender
+      const { data: chatRoom, error: roomError } = await supabase
+        .from('chat_rooms')
+        .select('student_id, counselor_id')
+        .eq('id', newMessage.chat_room_id)
+        .single()
+
+      if (roomError || !chatRoom) {
+        console.error('Error fetching chat room:', roomError)
+        return
+      }
+
+      // Lấy thông tin sender
+      const { data: sender, error: senderError } = await supabase
+        .from('users')
+        .select('id, full_name, role')
+        .eq('id', newMessage.sender_id)
+        .single()
+
+      if (senderError || !sender) {
+        console.error('Error fetching sender:', senderError)
+        return
+      }
+
+      const senderName = sender.full_name || 'Người dùng'
+      const senderRole = sender.role
+
+      // XÁC ĐỊNH AI SẼ NHẬN THÔNG BÁO
+      let recipients = []
+      let notificationType = 'new_message'
+      let notificationTitle = ''
+      let notificationMessage = ''
+
+      // Case 1: CHAT RIÊNG (counselor_id !== null)
+      if (chatRoom.counselor_id) {
+        // Đây là chat riêng
+        if (senderRole === 'student') {
+          // Học sinh gửi -> Thông báo cho counselor được chỉ định và admin
+          recipients.push(chatRoom.counselor_id)
+          
+          // Thông báo cho admin
+          const { data: admins } = await supabase
+            .from('users')
+            .select('id')
+            .eq('role', 'admin')
+          
+          if (admins) {
+            recipients.push(...admins.map(a => a.id))
+          }
+
+          notificationType = 'new_message'
+          notificationTitle = '💬 Tin nhắn riêng mới'
+          notificationMessage = `${senderName} đã gửi tin nhắn trong chat riêng`
+          
+        } else if (senderRole === 'counselor' || senderRole === 'admin') {
+          // Counselor/Admin gửi -> Thông báo cho học sinh
+          recipients.push(chatRoom.student_id)
+
+          notificationType = 'counselor_replied'
+          notificationTitle = '💬 Tư vấn viên đã trả lời'
+          notificationMessage = `${senderName} đã trả lời tin nhắn của bạn`
+        }
+
+      } 
+      // Case 2: CHAT CHUNG (counselor_id === null)
+      else {
+        if (senderRole === 'student') {
+          // Học sinh gửi -> Thông báo cho TẤT CẢ counselors và admins
+          const { data: counselors } = await supabase
+            .from('users')
+            .select('id')
+            .in('role', ['counselor', 'admin'])
+          
+          if (counselors) {
+            recipients = counselors.map(c => c.id)
+          }
+
+          notificationType = 'new_message'
+          notificationTitle = '💬 Tin nhắn mới từ học sinh'
+          notificationMessage = `${senderName} đã gửi tin nhắn mới`
+          
+        } else if (senderRole === 'counselor' || senderRole === 'admin') {
+          // Counselor gửi -> Thông báo cho học sinh
+          recipients.push(chatRoom.student_id)
+
+          notificationType = 'counselor_replied'
+          notificationTitle = '💬 Tư vấn viên đã trả lời'
+          notificationMessage = `${senderName} đã trả lời tin nhắn của bạn`
+        }
+      }
+
+      // Loại bỏ người gửi khỏi danh sách nhận
+      recipients = recipients.filter(id => id !== newMessage.sender_id)
+      // Loại bỏ duplicate
+      recipients = [...new Set(recipients)]
+
+      // Tạo thông báo cho từng người nhận
+      for (const recipientId of recipients) {
+        await createNotification(
+          recipientId,
+          notificationType,
+          notificationTitle,
+          notificationMessage,
+          `/chat${chatRoom.counselor_id ? `/${newMessage.chat_room_id}` : ''}`,
+          {
+            chat_room_id: newMessage.chat_room_id,
+            sender_id: newMessage.sender_id,
+            is_private: chatRoom.counselor_id !== null
+          }
+        )
+      }
+
+    } catch (error) {
+      console.error('Error creating notification for new message:', error)
+    }
   }
 
   const sendMessage = async (content) => {
@@ -142,6 +271,8 @@ export function useChatMessages(chatRoomId, currentUserId) {
       if (error) throw error
 
       console.log('Message sent:', data)
+      
+      // Notification sẽ được tạo tự động bởi subscribeToMessages
       
       return { data, error: null }
     } catch (error) {
