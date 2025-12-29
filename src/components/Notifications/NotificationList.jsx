@@ -5,7 +5,8 @@ import {
   CheckCheck, 
   Trash2, 
   Eye,
-  Lock
+  Lock,
+  Bell
 } from 'lucide-react'
 import { useNotifications } from '../../hooks/useNotifications'
 
