@@ -6,6 +6,7 @@ import { useUnreadMessages } from '../hooks/useUnreadMessages'
 import Navbar from '../components/Layout/Navbar'
 import CautionSection from '../components/Counselor/CautionSection'
 import PendingSection from '../components/Counselor/PendingSection'
+import NotificationPermissionPrompt from '../components/Notifications/NotificationPermissionPrompt'
 
 const FACEBOOK_FANPAGE_URL = 'https://www.facebook.com/Bucthuchieuthu6' // Fanpage BTCT6
 
@@ -25,6 +26,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
       <Navbar />
+
+      {/* Notification Permission Prompt - Auto shows after 3 seconds */}
+      <NotificationPermissionPrompt />
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center mb-12">

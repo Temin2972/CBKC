@@ -1,7 +1,6 @@
 import Navbar from '../components/Layout/Navbar'
 import { CalendarClock, Clock, MapPin, AlertCircle, CheckCircle } from 'lucide-react'
 
-// ⚠️ THAY ĐỔI URL GOOGLE FORM CỦA BẠN Ở ĐÂY
 const GOOGLE_FORM_EMBED_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfkEdnDGQ23qAX8PKsj9O5DMn4ilu9Yc36qyL0xntdzemtujQ/viewform?embedded=true'
 
 export default function Booking() {
@@ -56,8 +55,8 @@ export default function Booking() {
               </div>
               <p className="text-sm text-gray-600">
                 Phòng Tham vấn Tâm lý<br />
-                Tầng [X], Tòa nhà [Y]<br />
-                FPT School
+                Tầng 1, Tòa Gamma<br />
+                FPT University
               </p>
             </div>
 
