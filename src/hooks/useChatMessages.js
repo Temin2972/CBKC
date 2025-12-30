@@ -96,14 +96,7 @@ export function useChatMessages(chatRoomId, currentUserId) {
         },
         async (payload) => {
           console.log('New message received:', payload)
-          fetchMessages() // Refetch to get sender info
-          
-          // TẠO THÔNG BÁO cho người nhận - WRAP IN TRY-CATCH
-          try {
-            await handleNewMessageNotification(payload.new)
-          } catch (error) {
-            console.error('Error creating notification:', error)
-          }
+          fetchMessages() // Chỉ refetch messages, KHÔNG tạo notification
         }
       )
       .on(
@@ -131,9 +124,9 @@ export function useChatMessages(chatRoomId, currentUserId) {
     try {
       console.log('📨 Creating notification for new message:', newMessage)
 
-      // Không tạo thông báo cho tin nhắn của chính mình
-      if (newMessage.sender_id === currentUserId) {
-        console.log('⏭️ Skipping notification - message from current user')
+      // Đảm bảo message có sender_id
+      if (!newMessage.sender_id) {
+        console.error('❌ Message has no sender_id')
         return
       }
 
@@ -298,12 +291,20 @@ export function useChatMessages(chatRoomId, currentUserId) {
           content: content.trim()
         })
         .select()
+        .single()
 
       if (error) throw error
 
       console.log('Message sent:', data)
       
-      // Notification sẽ được tạo tự động bởi subscribeToMessages
+      // TẠO THÔNG BÁO NGAY SAU KHI GỬI THÀNH CÔNG
+      try {
+        await handleNewMessageNotification(data)
+        console.log('✅ Notification created after sending message')
+      } catch (notifError) {
+        console.error('❌ Failed to create notification:', notifError)
+        // Không throw error - tin nhắn đã gửi thành công rồi
+      }
       
       return { data, error: null }
     } catch (error) {
