@@ -1,296 +1,337 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { MessageCircle, Users, Shield, Clock, Heart, Lock, ArrowRight, CheckCircle, Star } from 'lucide-react'
+import { MessageCircle, Users, Shield, Clock, Heart, Lock, ArrowRight, CheckCircle, Star, Sparkles, Zap, Brain, Quote, Leaf, BookOpen } from 'lucide-react'
 import { useQuotes } from '../hooks/useQuotes'
+import Footer from '../components/Layout/Footer'
+import { ROUTES } from '../constants'
+
+// Background image - Psychology room (blurred)
+const LANDING_BG = 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1920&q=80'
 
 export default function LandingPage() {
   const navigate = useNavigate()
   const { quote, loading: quoteLoading } = useQuotes()
 
   const handleFeatureClick = (feature) => {
-    // Redirect to register page with a message
     navigate('/register', { state: { from: feature } })
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400">
-      {/* Navbar for non-authenticated users */}
-      <nav className="bg-white/90 backdrop-blur-sm shadow-lg border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="text-purple-600" size={32} />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                S-Net
-              </h1>
+    <div className="min-h-screen text-gray-900 overflow-hidden relative">
+      {/* Background Image with blur */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url(${LANDING_BG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(8px) brightness(0.85)'
+        }}
+      />
+      {/* Gradient overlay */}
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/30 via-emerald-800/20 to-cyan-900/30" />
+
+      {/* Animated Floating Orbs - Calming therapy room aesthetic */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="floating-orb floating-orb-1"></div>
+        <div className="floating-orb floating-orb-2"></div>
+        <div className="floating-orb floating-orb-3"></div>
+      </div>
+
+      {/* Navbar - Clean design like reference */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="relative">
+                <Heart className="w-8 h-8 text-teal-500 group-hover:scale-110 transition-transform" strokeWidth={1.5} />
+                <div className="absolute inset-0 bg-teal-400/20 blur-lg rounded-full" />
+              </div>
+              <span className="text-xl font-semibold text-gray-800">S-Net</span>
+            </Link>
+
+            {/* Center Nav Items */}
+            <div className="hidden md:flex items-center gap-1 bg-gray-50/80 rounded-full px-2 py-1">
+              <button
+                onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 rounded-full transition-colors"
+              >
+                Tính năng
+              </button>
+              <Link
+                to={ROUTES.GUIDE}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 rounded-full transition-colors flex items-center gap-1"
+              >
+                <BookOpen size={14} />
+                Hướng dẫn
+              </Link>
+              <button
+                onClick={() => document.getElementById('about').scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 rounded-full transition-colors"
+              >
+                Về chúng tôi
+              </button>
+              <button
+                onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 rounded-full transition-colors"
+              >
+                Liên hệ
+              </button>
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* Auth Buttons */}
+            <div className="flex items-center gap-3">
               <Link
                 to="/login"
-                className="px-4 py-2 text-gray-700 hover:text-purple-600 transition-colors font-medium"
+                className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-teal-600 transition-colors"
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/register"
-                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:from-purple-600 hover:to-pink-600 transition-all font-medium shadow-lg"
+                className="px-5 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-full text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md"
               >
-                Đăng ký ngay
+                Bắt đầu
               </Link>
             </div>
           </div>
         </div>
       </nav>
 
+      {/* Content wrapper with z-index */}
+      <div className="relative z-10">
       {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <div className="mb-8 animate-fade-in">
-          <div className="inline-block p-4 bg-white/20 backdrop-blur-sm rounded-3xl mb-6">
-            <Shield size={80} className="text-white" />
+      <section className="relative pt-28 pb-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-md border border-white/50 rounded-full mb-6 shadow-lg">
+              <Leaf size={16} className="text-teal-600" />
+              <span className="text-sm font-medium text-gray-700">Phòng tham vấn tâm lý trực tuyến cho học sinh</span>
+            </div>
+
+            {/* Main Heading */}
+            <h1 className="text-4xl md:text-6xl font-bold mb-5 text-white leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              Nơi an toàn để
+              <br />
+              <span className="text-teal-300">bạn được lắng nghe</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              Kết nối với tư vấn viên tâm lý hoặc chia sẻ ẩn danh trong cộng đồng an toàn, được bảo vệ bởi AI
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Link
+                to="/register"
+                className="group px-8 py-3.5 bg-teal-500 hover:bg-teal-600 text-white rounded-full text-base font-medium shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30 transition-all duration-200 flex items-center gap-2"
+              >
+                Bắt đầu ngay
+                <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <button
+                onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
+                className="px-8 py-3.5 bg-white/90 backdrop-blur-md text-gray-800 rounded-full text-base font-medium hover:bg-white transition-all duration-200 border border-white/50 shadow-lg"
+              >
+                Tìm hiểu thêm
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="mt-14 grid grid-cols-3 gap-6 max-w-lg mx-auto">
+              <div className="text-center p-4 bg-white/85 backdrop-blur-md rounded-2xl border border-white/50 shadow-lg">
+                <div className="text-2xl md:text-3xl font-bold text-teal-600">100%</div>
+                <div className="text-gray-600 text-sm mt-1 font-medium">Bảo mật</div>
+              </div>
+              <div className="text-center p-4 bg-white/85 backdrop-blur-md rounded-2xl border border-white/50 shadow-lg">
+                <div className="text-2xl md:text-3xl font-bold text-cyan-600">24/7</div>
+                <div className="text-gray-600 text-sm mt-1 font-medium">Cộng đồng</div>
+              </div>
+              <div className="text-center p-4 bg-white/85 backdrop-blur-md rounded-2xl border border-white/50 shadow-lg">
+                <div className="text-2xl md:text-3xl font-bold text-purple-600">AI</div>
+                <div className="text-gray-600 text-sm mt-1 font-medium">Kiểm duyệt</div>
+              </div>
+            </div>
           </div>
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
-            Nền tảng hỗ trợ tư vấn tâm lý
-            <br />
-            <span className="bg-gradient-to-r from-yellow-200 to-pink-200 bg-clip-text text-transparent">
-              Dành cho Fschool
-            </span>
-          </h2>
-          <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-3xl mx-auto">
-            Nơi an toàn để học sinh chia sẻ, được lắng nghe và nhận sự hỗ trợ từ các tư vấn viên tâm lý chuyên nghiệp
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              to="/register"
-              className="px-8 py-4 bg-white text-purple-600 rounded-full text-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-2xl flex items-center gap-2"
-            >
-              Đăng ký ngay
-              <ArrowRight size={20} />
-            </Link>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-semibold text-gray-800 mb-3">
+              Dịch vụ <span className="text-teal-600">hỗ trợ</span>
+            </h2>
+            <p className="text-gray-600">
+              Chọn phương thức phù hợp với bạn
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Private Chat Card */}
             <button
-              onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-full text-lg font-bold hover:bg-white/30 transition-all border-2 border-white"
+              onClick={() => handleFeatureClick('chat')}
+              className="group relative p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-teal-200 shadow-sm hover:shadow-lg transition-all duration-300 text-left hover:-translate-y-1"
             >
-              Tìm hiểu thêm
+              <div className="absolute top-4 right-4 px-3 py-1 bg-teal-50 text-teal-600 rounded-full text-xs font-medium flex items-center gap-1">
+                <Lock size={12} />
+                Đăng ký
+              </div>
+
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <MessageCircle size={24} className="text-teal-600" strokeWidth={1.5} />
+              </div>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Chat với Tư vấn viên
+              </h3>
+
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                Kết nối 1-1 với tư vấn viên tâm lý. Mọi cuộc trò chuyện được bảo mật tuyệt đối.
+              </p>
+
+              <div className="space-y-2">
+                {['Bảo mật 100%', 'Phản hồi nhanh', 'Chọn tư vấn viên'].map((text, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle size={14} className="text-teal-500" />
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 flex items-center gap-2 text-teal-600 text-sm font-medium">
+                Bắt đầu ngay
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </div>
+            </button>
+
+            {/* Community Card */}
+            <button
+              onClick={() => handleFeatureClick('community')}
+              className="group relative p-6 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 hover:border-purple-200 shadow-sm hover:shadow-lg transition-all duration-300 text-left hover:-translate-y-1"
+            >
+              <div className="absolute top-4 right-4 px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-xs font-medium flex items-center gap-1">
+                <Lock size={12} />
+                Đăng ký
+              </div>
+
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                <Users size={24} className="text-purple-600" strokeWidth={1.5} />
+              </div>
+
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">
+                Cộng đồng Ẩn danh
+              </h3>
+
+              <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                Chia sẻ câu chuyện trong môi trường hoàn toàn ẩn danh và an toàn.
+              </p>
+
+              <div className="space-y-2">
+                {['Hoàn toàn ẩn danh', 'AI kiểm duyệt', 'Đăng bài tự do'].map((text, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle size={14} className="text-purple-500" />
+                    <span>{text}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 flex items-center gap-2 text-purple-600 text-sm font-medium">
+                Khám phá ngay
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </div>
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Features Preview Section */}
-      <div id="features" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h3 className="text-4xl font-bold text-white mb-4">
-            Các tính năng nổi bật
-          </h3>
-          <p className="text-xl text-white/90">
-            Trải nghiệm đầy đủ sau khi đăng ký tài khoản
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Private Chat Feature */}
-          <button
-            onClick={() => handleFeatureClick('chat')}
-            className="group relative p-8 bg-white rounded-3xl shadow-2xl hover:shadow-3xl transition-all transform hover:-translate-y-2 text-left overflow-hidden"
-          >
-            {/* Lock overlay */}
-            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 shadow-lg">
-              <Lock size={14} />
-              Cần đăng ký
-            </div>
-
-            <div className="inline-block p-4 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <MessageCircle size={40} className="text-blue-600" />
-            </div>
-
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">
-              Chat riêng tư với Tư vấn viên
-            </h3>
-
-            <p className="text-gray-600 mb-4">
-              Kết nối trực tiếp một-một với các tư vấn viên tâm lý được đào tạo chuyên nghiệp. Mọi cuộc trò chuyện được mã hóa và bảo mật tuyệt đối.
-            </p>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Bảo mật 100%, không ai khác xem được</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Tư vấn viên phản hồi nhanh trong giờ làm việc</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Chọn tư vấn viên phù hợp với bạn</span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-2 text-sm text-purple-600 font-semibold group-hover:gap-3 transition-all">
-              Đăng ký để sử dụng
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-
-            {/* Gradient glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-3xl"></div>
-          </button>
-
-          {/* Community Feature */}
-          <button
-            onClick={() => handleFeatureClick('community')}
-            className="group relative p-8 bg-white rounded-3xl shadow-2xl hover:shadow-3xl transition-all transform hover:-translate-y-2 text-left overflow-hidden"
-          >
-            {/* Lock overlay */}
-            <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1 shadow-lg">
-              <Lock size={14} />
-              Cần đăng ký
-            </div>
-
-            <div className="inline-block p-4 bg-gradient-to-br from-purple-100 to-pink-200 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
-              <Users size={40} className="text-purple-600" />
-            </div>
-
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">
-              Cộng đồng Ẩn danh
-            </h3>
-
-            <p className="text-gray-600 mb-4">
-              Chia sẻ câu chuyện và kết nối với những người có cùng hoàn cảnh trong một môi trường hoàn toàn ẩn danh và an toàn.
-            </p>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Hoàn toàn ẩn danh - Không ai biết bạn là ai</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>AI kiểm duyệt nội dung tự động</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-700">
-                <CheckCircle size={16} className="text-green-500" />
-                <span>Đăng bài, bình luận và tương tác tự do</span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-2 text-sm text-purple-600 font-semibold group-hover:gap-3 transition-all">
-              Đăng ký để sử dụng
-              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-
-            {/* Gradient glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-pink-400/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none rounded-3xl"></div>
-          </button>
-        </div>
-      </div>
+      </section>
 
       {/* Why Choose Us Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 md:p-12">
-          <h3 className="text-3xl font-bold text-white mb-8 text-center">
-            Tại sao chọn S-Net?
-          </h3>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield size={32} className="text-white" />
-              </div>
-              <h4 className="text-xl font-bold text-white mb-2">
-                Bảo mật tuyệt đối
-              </h4>
-              <p className="text-white/80">
-                Mọi thông tin của bạn được mã hóa và bảo mật theo tiêu chuẩn quốc tế
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart size={32} className="text-white" />
-              </div>
-              <h4 className="text-xl font-bold text-white mb-2">
-                Tư vấn viên chuyên nghiệp
-              </h4>
-              <p className="text-white/80">
-                Đội ngũ tư vấn viên tâm lý được đào tạo bài bản và có kinh nghiệm
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock size={32} className="text-white" />
-              </div>
-              <h4 className="text-xl font-bold text-white mb-2">
-                Hỗ trợ liên tục
-              </h4>
-              <p className="text-white/80">
-                Luôn có tư vấn viên sẵn sàng hỗ trợ bạn trong giờ làm việc
-              </p>
+      <section id="about" className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm p-8 md:p-12">
+            <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-10 text-center">
+              Tại sao chọn <span className="text-teal-600">S-Net</span>?
+            </h2>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { icon: Shield, title: 'Bảo mật tuyệt đối', desc: 'Mọi thông tin được mã hóa theo chuẩn quốc tế', color: 'from-teal-400 to-cyan-400', bg: 'bg-teal-50' },
+                { icon: Heart, title: 'Chuyên nghiệp', desc: 'Đội ngũ tư vấn viên được đào tạo bài bản', color: 'from-rose-400 to-pink-400', bg: 'bg-rose-50' },
+                { icon: Clock, title: 'Hỗ trợ liên tục', desc: 'Luôn sẵn sàng hỗ trợ trong giờ làm việc', color: 'from-purple-400 to-violet-400', bg: 'bg-purple-50' },
+              ].map(({ icon: Icon, title, desc, color, bg }, i) => (
+                <div key={i} className="text-center">
+                  <div className={`w-14 h-14 ${bg} rounded-xl flex items-center justify-center mx-auto mb-4`}>
+                    <Icon size={26} className={`bg-gradient-to-r ${color} bg-clip-text`} style={{ color: color.includes('teal') ? '#14b8a6' : color.includes('rose') ? '#f43f5e' : '#a855f7' }} strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">{title}</h3>
+                  <p className="text-gray-600 text-sm">{desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Quote Section */}
       {!quoteLoading && quote && (
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 text-center">
-            <p className="text-2xl text-white mb-3">
-              "{quote.content}"
-            </p>
-            {quote.author && (
-              <p className="text-lg text-white/80">
-                — {quote.author} —
+        <section className="py-12 px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-8 text-center">
+              <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-teal-500 text-xl">"</span>
+              </div>
+              <p className="text-lg md:text-xl text-gray-700 mb-3 italic leading-relaxed">
+                {quote.content}
               </p>
-            )}
+              {quote.author && (
+                <p className="text-gray-500 text-sm">— {quote.author}</p>
+              )}
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* CTA Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-3xl p-12 text-center shadow-2xl">
-          <h3 className="text-4xl font-bold text-white mb-4">
-            Sẵn sàng bắt đầu hành trình của bạn?
-          </h3>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Đăng ký miễn phí ngay hôm nay và trải nghiệm một môi trường an toàn, thân thiện để chia sẻ và được hỗ trợ
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="px-8 py-4 bg-white text-purple-600 rounded-full text-lg font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl flex items-center justify-center gap-2"
-            >
-              Đăng ký miễn phí
-              <ArrowRight size={20} />
-            </Link>
-            <Link
-              to="/login"
-              className="px-8 py-4 bg-white/20 backdrop-blur-sm text-white rounded-full text-lg font-bold hover:bg-white/30 transition-all border-2 border-white"
-            >
-              Đã có tài khoản? Đăng nhập
-            </Link>
+      {/* Final CTA Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-10 md:p-14 text-center overflow-hidden">
+            {/* Decorative elements */}
+            <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+            <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
+
+            <div className="relative z-10">
+              <h2 className="text-3xl md:text-4xl font-semibold text-white mb-4">
+                Sẵn sàng bắt đầu?
+              </h2>
+              <p className="text-lg text-white/90 mb-8 max-w-xl mx-auto">
+                Đăng ký miễn phí và trải nghiệm môi trường an toàn để được hỗ trợ
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  to="/register"
+                  className="group px-8 py-3 bg-white text-teal-600 rounded-full font-medium hover:bg-gray-50 transition-all shadow-lg flex items-center justify-center gap-2"
+                >
+                  Đăng ký miễn phí
+                  <ArrowRight size={18} className="group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <Link
+                  to="/login"
+                  className="px-8 py-3 bg-white/20 backdrop-blur-sm text-white rounded-full font-medium hover:bg-white/30 transition-all border border-white/40"
+                >
+                  Đăng nhập
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-white/10 backdrop-blur-md border-t border-white/20 py-8">
-        <div className="max-w-7xl mx-auto px-4 text-center text-white/80">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Shield size={24} className="text-white" />
-            <span className="text-xl font-bold text-white">S-Net</span>
-          </div>
-          <p className="text-sm mb-2">
-            Nền tảng hỗ trợ tâm lý học đường
-          </p>
-          <p className="text-xs">
-            © 2025 S-Net by CBKC. All rights reserved.
-          </p>
-          <div className="mt-4">
-            <p className="text-xs">
-              Đường dây nóng hỗ trợ tâm lý: <strong>1800 599 920</strong>
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
+      </div>
     </div>
   )
 }

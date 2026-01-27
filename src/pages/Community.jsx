@@ -3,9 +3,11 @@ import { useAuth } from '../hooks/useAuth'
 import { usePosts } from '../hooks/usePosts'
 import { supabase } from '../lib/supabaseClient'
 import Navbar from '../components/Layout/Navbar'
+import Footer from '../components/Layout/Footer'
 import CommentSection from '../components/Community/CommentSection'
 import ContentModerationModal from '../components/Community/ContentModerationModal'
-import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp, Loader2 } from 'lucide-react'
+import ImageLightbox from '../components/UI/ImageLightbox'
+import { Heart, MessageCircle, Upload, X, Trash2, ChevronDown, ChevronUp, Loader2, EyeOff, Eye, ImageIcon } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { 
   analyzeContent, 
@@ -13,6 +15,9 @@ import {
   FLAG_LEVELS,
   getModerationMessage 
 } from '../lib/contentModeration'
+
+// Background image for community page - Gamma Hall THPT FPT Ha Noi
+const COMMUNITY_BG = 'https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80'
 
 export default function Community() {
   const { user } = useAuth()
@@ -24,6 +29,10 @@ export default function Community() {
   const [analyzing, setAnalyzing] = useState(false)
   const [activeCommentPostId, setActiveCommentPostId] = useState(null)
   const [likingPostId, setLikingPostId] = useState(null)
+  const [isAnonymous, setIsAnonymous] = useState(true) // Default to anonymous mode
+  
+  // Lightbox state
+  const [lightboxImage, setLightboxImage] = useState(null)
   
   // Moderation modal state
   const [moderationModal, setModerationModal] = useState({
@@ -91,9 +100,58 @@ export default function Community() {
     e.preventDefault()
     if (!newPost.trim() && !postImage) return
 
+    // If post has image, require manual review (no AI moderation)
+    if (postImage) {
+      setUploading(true)
+      let imageUrl = null
+
+      const fileExt = postImage.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('post-images')
+        .upload(fileName, postImage)
+
+      if (!uploadError) {
+        const { data } = supabase.storage.from('post-images').getPublicUrl(fileName)
+        imageUrl = data.publicUrl
+      }
+
+      const sanitizedContent = DOMPurify.sanitize(newPost)
+
+      // Save to pending_content table for manual review
+      const { error } = await supabase
+        .from('pending_content')
+        .insert({
+          user_id: user.id,
+          content_type: 'post',
+          content: sanitizedContent,
+          image_url: imageUrl,
+          pending_reason: 'Bài viết có hình ảnh cần tư vấn viên duyệt thủ công',
+          status: 'pending',
+          is_anonymous: isAnonymous
+        })
+
+      if (!error) {
+        setNewPost('')
+        removeImage()
+        
+        setModerationModal({
+          isOpen: true,
+          action: MODERATION_ACTIONS.PENDING,
+          title: '📷 Bài viết đang chờ duyệt',
+          message: 'Bài viết có hình ảnh cần được tư vấn viên kiểm duyệt trước khi hiển thị. Thường mất 1-2 giờ trong giờ làm việc.',
+          showChatSuggestion: false
+        })
+      }
+
+      setUploading(false)
+      return
+    }
+
     setAnalyzing(true)
 
-    // Analyze content with AI
+    // Analyze content with AI (only for text-only posts)
     const analysis = await analyzeContent(newPost)
     console.log('Content analysis:', analysis)
 
@@ -263,63 +321,118 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400">
-      <Navbar />
-
-      {/* Moderation Modal */}
-      <ContentModerationModal
-        isOpen={moderationModal.isOpen}
-        onClose={closeModerationModal}
-        action={moderationModal.action}
-        title={moderationModal.title}
-        message={moderationModal.message}
-        showChatSuggestion={moderationModal.showChatSuggestion}
+    <div className="min-h-screen relative">
+      {/* Background Image with blur */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url(${COMMUNITY_BG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'blur(3px) brightness(0.7)'
+        }}
       />
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900/40 via-teal-800/30 to-emerald-900/40" />
+      
+      <div className="relative z-10">
+        <Navbar />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-white mb-8 text-center">
-          Cộng đồng Ẩn danh
-        </h1>
+        {/* Lightbox */}
+        {lightboxImage && (
+          <ImageLightbox
+            src={lightboxImage.src}
+            alt={lightboxImage.alt}
+            onClose={() => setLightboxImage(null)}
+          />
+        )}
 
-        {/* Create Post */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <form onSubmit={handleCreatePost}>
-            <textarea
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              placeholder="Chia sẻ câu chuyện của bạn..."
-              className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-              rows="4"
-              disabled={uploading || analyzing}
-            />
+        {/* Moderation Modal */}
+        <ContentModerationModal
+          isOpen={moderationModal.isOpen}
+          onClose={closeModerationModal}
+          action={moderationModal.action}
+          title={moderationModal.title}
+          message={moderationModal.message}
+          showChatSuggestion={moderationModal.showChatSuggestion}
+        />
 
-            {postImagePreview && (
-              <div className="mt-3 relative">
-                <img
-                  src={postImagePreview}
-                  alt="Preview"
-                  className="w-full max-h-64 object-cover rounded-xl"
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <h1 className="text-4xl font-bold text-white mb-2 text-center drop-shadow-lg">
+            Cộng đồng Ẩn danh
+          </h1>
+          <p className="text-white/80 text-center mb-8">
+            Chia sẻ câu chuyện của bạn - không ai biết bạn là ai
+          </p>
+
+          {/* Create Post */}
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-6">
+            {/* Anonymous Toggle */}
+            <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                {isAnonymous ? (
+                  <EyeOff size={18} className="text-purple-600" />
+                ) : (
+                  <Eye size={18} className="text-gray-600" />
+                )}
+                <span className="text-sm font-medium text-gray-700">
+                  {isAnonymous ? 'Đang ẩn danh' : 'Hiển thị tên thật'}
+                </span>
               </div>
-            )}
+              <button
+                type="button"
+                onClick={() => setIsAnonymous(!isAnonymous)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${
+                  isAnonymous ? 'bg-purple-500' : 'bg-gray-300'
+                }`}
+              >
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                  isAnonymous ? 'translate-x-7' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
 
-            <div className="flex items-center justify-between mt-4">
-              <label className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
-                <Upload size={18} />
-                <span className="text-sm">Thêm ảnh</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  disabled={uploading || analyzing}
+            <form onSubmit={handleCreatePost}>
+              <textarea
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                placeholder="Chia sẻ câu chuyện của bạn..."
+                className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                rows="4"
+                disabled={uploading || analyzing}
+              />
+
+              {postImagePreview && (
+                <div className="mt-3 relative">
+                  <img
+                    src={postImagePreview}
+                    alt="Preview"
+                    className="w-full max-h-64 object-cover rounded-xl"
+                  />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                  {/* Image manual review notice */}
+                  <div className="absolute bottom-2 left-2 right-2 px-3 py-2 bg-amber-500/90 text-white text-xs rounded-lg flex items-center gap-2">
+                    <ImageIcon size={14} />
+                    <span>Bài có ảnh sẽ cần tư vấn viên duyệt thủ công</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between mt-4">
+                <label className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors">
+                  <Upload size={18} />
+                  <span className="text-sm">Thêm ảnh</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    disabled={uploading || analyzing}
                 />
               </label>
 
@@ -385,12 +498,13 @@ export default function Community() {
                 {/* Post Content */}
                 <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
 
-                {/* Post Image */}
+                {/* Post Image - Click to open lightbox */}
                 {post.image_url && (
                   <img
                     src={post.image_url}
                     alt="Post image"
-                    className="w-full max-h-96 object-cover rounded-xl mb-4"
+                    className="w-full max-h-96 object-cover rounded-xl mb-4 cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setLightboxImage({ src: post.image_url, alt: 'Post image' })}
                   />
                 )}
 
@@ -437,6 +551,10 @@ export default function Community() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Footer */}
+      <Footer />
       </div>
     </div>
   )

@@ -7,6 +7,9 @@ import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
 import { MessageCircle, Users, Clock, EyeOff, Eye, Shield } from 'lucide-react'
 
+// Background image - Psychology room
+const CHAT_BG = 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&q=80'
+
 export default function CounselorChat() {
   const { user } = useAuth()
   const { roomId } = useParams() // Get roomId from URL if present
@@ -66,20 +69,45 @@ export default function CounselorChat() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center text-white text-xl">Đang tải...</div>
+      <div className="min-h-screen relative">
+        <div 
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${CHAT_BG})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(0.85)'
+          }}
+        />
+        <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/40 via-emerald-800/30 to-cyan-900/40" />
+        <div className="relative z-10">
+          <Navbar />
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="text-center text-white text-xl">Đang tải...</div>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-400 via-emerald-400 to-teal-400">
-      <Navbar />
+    <div className="min-h-screen relative">
+      {/* Background Image */}
+      <div 
+        className="fixed inset-0 z-0"
+        style={{
+          backgroundImage: `url(${CHAT_BG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          filter: 'brightness(0.85)'
+        }}
+      />
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/40 via-emerald-800/30 to-cyan-900/40" />
+      
+      <div className="relative z-10">
+        <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-3">
             Phòng Tư vấn
@@ -299,6 +327,7 @@ export default function CounselorChat() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
