@@ -18,7 +18,7 @@ import { HOME_MESSAGES } from '../constants/messages'
 import { getUserDisplayName } from '../utils/helpers'
 
 // Background image - Psychology room (blurred)
-const HOME_BG = '/background/home.jpg'
+const HOME_BG = 'https://images.unsplash.com/photo-1573497620053-ea5300f94f21?w=1920&q=80'
 
 // Feature card configuration
 const getFeatureCards = (isCounselor, hasNewMessages, unreadCount) => [
