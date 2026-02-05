@@ -43,15 +43,22 @@ export function useChatMessages(chatRoomId, currentUserId) {
         return
       }
 
-      // Get unique sender IDs
-      const senderIds = [...new Set(messagesData.map(m => m.sender_id))]
+      // Get unique sender IDs (filter out null for AI/system messages)
+      const senderIds = [...new Set(messagesData.map(m => m.sender_id).filter(id => id !== null))]
       console.log('Fetching senders:', senderIds)
 
       // Fetch all senders from public.users (which has role directly)
-      const { data: usersData, error: usersError } = await supabase
-        .from('users')
-        .select('id, full_name, role')
-        .in('id', senderIds)
+      let usersData = []
+      let usersError = null
+      
+      if (senderIds.length > 0) {
+        const result = await supabase
+          .from('users')
+          .select('id, full_name, role')
+          .in('id', senderIds)
+        usersData = result.data
+        usersError = result.error
+      }
 
       if (usersError) {
         console.error('Error fetching users:', usersError)

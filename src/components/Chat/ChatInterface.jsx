@@ -158,26 +158,40 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     }, AI_RESPONSE_DELAY)
   }, [counselorHasReplied, sendAIMessage])
 
+  // Track processed message IDs to avoid duplicate AI responses
+  const processedMessagesRef = useRef(new Set())
+
   // Watch for new student messages to trigger AI
   useEffect(() => {
     if (!messages || messages.length === 0) return
 
     const lastMessage = messages[messages.length - 1]
-    const isStudentMessage = lastMessage.sender?.role === 'student' && !lastMessage.is_system
-    const isCurrentUser = lastMessage.sender_id === currentUser?.id
+    // Check if it's a student message (not system, has sender_id that matches current user)
+    const isStudentMessage = !lastMessage.is_system && lastMessage.sender_id === currentUser?.id
+    
+    console.log('📩 Last message check:', {
+      id: lastMessage.id,
+      isStudentMessage,
+      is_system: lastMessage.is_system,
+      sender_id: lastMessage.sender_id,
+      aiHasResponded: aiHasRespondedRef.current,
+      counselorReplied: counselorHasReplied(),
+      alreadyProcessed: processedMessagesRef.current.has(lastMessage.id)
+    })
+
+    // Skip if already processed this message
+    if (processedMessagesRef.current.has(lastMessage.id)) return
 
     // If this is a student message and AI hasn't started yet, start timer
     if (isStudentMessage && !aiHasRespondedRef.current && !counselorHasReplied()) {
+      processedMessagesRef.current.add(lastMessage.id)
       startAITimer()
     }
 
     // If AI has already introduced, respond to new student messages
-    if (isStudentMessage && aiHasRespondedRef.current && !counselorHasReplied() && isCurrentUser) {
-      // Only process if this is the latest message and hasn't been processed
-      const lastNonSystemMsg = messages.filter(m => !m.is_system).slice(-1)[0]
-      if (lastNonSystemMsg?.id === lastMessage.id) {
-        processWithAI(lastMessage.content)
-      }
+    if (isStudentMessage && aiHasRespondedRef.current && !counselorHasReplied()) {
+      processedMessagesRef.current.add(lastMessage.id)
+      processWithAI(lastMessage.content)
     }
 
     // Stop AI if counselor replies
@@ -217,6 +231,7 @@ export default function ChatInterface({ chatRoom, currentUser }) {
     hasMarkedAsRead.current = false
     aiHasRespondedRef.current = false
     conversationHistoryRef.current = []
+    processedMessagesRef.current = new Set()
   }, [chatRoom?.id])
 
   const scrollToBottom = () => {
