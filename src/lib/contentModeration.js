@@ -1,7 +1,7 @@
 // Content Moderation using Google AI Studio API (Gemini)
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent'
 
 // Confidence threshold - below this, content goes to pending review
 const CONFIDENCE_THRESHOLD = 0.7
