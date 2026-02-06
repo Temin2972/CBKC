@@ -140,7 +140,7 @@ export default function Navbar() {
                   )}
                 </div>
                 <span className="text-sm text-gray-700 font-medium hidden sm:block">
-                  {fullName || 'User'}
+                  {'Tài khoản'}
                 </span>
                 <ChevronDown size={14} className={`text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
               </button>
