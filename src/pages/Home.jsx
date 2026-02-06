@@ -1,7 +1,3 @@
-/**
- * Home Page Component - Completely Redesigned
- * Modern dashboard with clean cards and improved UX
- */
 import { useState, useEffect } from 'react'
 import {
   MessageCircle, Users, Clock, Shield, Bell, Heart,
@@ -46,7 +42,7 @@ export default function Home() {
       <div
         className="fixed inset-0 z-0"
         style={{
-          backgroundImage: `url('/images/background.jpg')`,
+          backgroundImage: `url('/images/flying.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           filter: 'blur(3px) brightness(0.9)'
@@ -161,7 +157,7 @@ export default function Home() {
 
           {/* Main Feature Cards */}
           <section className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
               <Sparkles className="text-indigo-500" size={24} />
               Dịch vụ chính
             </h2>
@@ -283,7 +279,7 @@ export default function Home() {
           {/* Counselor-only Sections */}
           {isCounselor && (
             <section className="space-y-8">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <BookOpen className="text-indigo-500" size={24} />
                 Công cụ tư vấn viên
               </h2>

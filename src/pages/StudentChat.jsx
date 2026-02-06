@@ -11,8 +11,8 @@ import ChatInterface from '../components/Chat/ChatInterface'
 import CounselorSelector from '../components/Chat/CounselorSelector'
 import { MessageCircle, Trash2, Plus, AlertCircle, Users, Eye, EyeOff } from 'lucide-react'
 
-// Background image - Psychology room
-const CHAT_BG = 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&q=80'
+// Background image - Library THPT FPT
+const CHAT_BG = '/images/library.jpg'
 
 export default function StudentChat() {
   const { user } = useAuth()
@@ -193,7 +193,7 @@ export default function StudentChat() {
             backgroundImage: `url(${CHAT_BG})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'brightness(0.85)'
+            filter: 'blur(3px) brightness(0.9)'
           }}
         />
         <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/40 via-emerald-800/30 to-cyan-900/40" />
@@ -216,7 +216,7 @@ export default function StudentChat() {
           backgroundImage: `url(${CHAT_BG})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'brightness(0.85)'
+          filter: 'blur(3px) brightness(0.9)'
         }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-teal-900/40 via-emerald-800/30 to-cyan-900/40" />

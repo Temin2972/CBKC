@@ -16,8 +16,8 @@ import {
   getModerationMessage 
 } from '../lib/contentModeration'
 
-// Background image for community page - Gamma Hall THPT FPT Ha Noi
-const COMMUNITY_BG = 'https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80'
+// Background image for community page - Dom buildings THPT FPT
+const COMMUNITY_BG = '/images/doms.jpg'
 
 export default function Community() {
   const { user } = useAuth()
@@ -329,7 +329,7 @@ export default function Community() {
           backgroundImage: `url(${COMMUNITY_BG})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'blur(3px) brightness(0.7)'
+          filter: 'blur(3px) brightness(0.9)'
         }}
       />
       <div className="fixed inset-0 z-0 bg-gradient-to-br from-purple-900/40 via-teal-800/30 to-emerald-900/40" />
