@@ -18,12 +18,10 @@ export function useStudentNotes(studentId) {
         }
 
         try {
+            // First fetch the notes
             const { data, error } = await supabase
                 .from('student_notes')
-                .select(`
-          *,
-          updater:users!student_notes_updated_by_fkey(id, full_name)
-        `)
+                .select('*')
                 .eq('student_id', studentId)
                 .single()
 
@@ -33,6 +31,16 @@ export function useStudentNotes(studentId) {
             } else if (error) {
                 throw error
             } else {
+                // If there's an updated_by, fetch the user name separately
+                if (data.updated_by) {
+                    const { data: userData } = await supabase
+                        .from('users')
+                        .select('id, full_name')
+                        .eq('id', data.updated_by)
+                        .single()
+                    
+                    data.updater = userData
+                }
                 setNotes(data)
             }
         } catch (err) {
