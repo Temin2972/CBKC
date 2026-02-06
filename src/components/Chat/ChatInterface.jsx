@@ -74,30 +74,44 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 `
 
       // Get existing notes
-      const { data: existingNote } = await supabase
+      const { data: existingNote, error: fetchError } = await supabase
         .from('student_notes')
         .select('id, content')
         .eq('student_id', studentId)
         .single()
 
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching existing notes:', fetchError)
+      }
+
+      let result
       if (existingNote) {
         // Prepend AI assessment to existing notes
         const updatedContent = aiNoteEntry + (existingNote.content || '')
-        await supabase
+        result = await supabase
           .from('student_notes')
-          .update({ content: updatedContent })
+          .update({ 
+            content: updatedContent,
+            updated_at: new Date().toISOString()
+          })
           .eq('student_id', studentId)
+          .select()
       } else {
         // Create new note with AI assessment
-        await supabase
+        result = await supabase
           .from('student_notes')
           .insert({
             student_id: studentId,
             content: aiNoteEntry
           })
+          .select()
       }
 
-      console.log('✅ AI assessment saved to student notes')
+      if (result.error) {
+        console.error('❌ Error saving AI assessment to notes:', result.error)
+      } else {
+        console.log('✅ AI assessment saved to student notes:', result.data)
+      }
     } catch (error) {
       console.error('❌ Error saving AI assessment to notes:', error)
     }

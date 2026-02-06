@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react'
 import {
     ChevronRight, ChevronLeft, Save, Loader2,
-    StickyNote, Clock, User, X
+    StickyNote, Clock, User, X, RefreshCw
 } from 'lucide-react'
 import { useStudentNotes } from '../../hooks/useStudentNotes'
 
@@ -23,12 +23,14 @@ export default function StudentNotesPanel({
         loading,
         lastUpdatedBy,
         lastUpdatedAt,
-        saveNotes
+        saveNotes,
+        refetch
     } = useStudentNotes(studentId)
 
     const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
     const [localContent, setLocalContent] = useState('')
     const [hasChanges, setHasChanges] = useState(false)
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
     useEffect(() => {
         setLocalContent(content)
@@ -38,9 +40,26 @@ export default function StudentNotesPanel({
         setHasChanges(localContent !== content)
     }, [localContent, content])
 
+    // Auto-refresh periodically to catch AI updates (since realtime might be unreliable)
+    useEffect(() => {
+        if (!studentId || isCollapsed) return
+        
+        const interval = setInterval(() => {
+            refetch()
+        }, 10000) // Refresh every 10 seconds
+        
+        return () => clearInterval(interval)
+    }, [studentId, isCollapsed, refetch])
+
     const handleSave = async () => {
         await saveNotes(localContent, counselorId)
         setHasChanges(false)
+    }
+
+    const handleRefresh = async () => {
+        setIsRefreshing(true)
+        await refetch()
+        setTimeout(() => setIsRefreshing(false), 500)
     }
 
     // Collapsed view (only for non-inline mode)
@@ -73,20 +92,40 @@ export default function StudentNotesPanel({
                     </div>
                 </div>
                 {onClose ? (
-                    <button
-                        onClick={onClose}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
-                        title="Đóng ghi chú"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={handleRefresh}
+                            className={`p-1.5 text-gray-400 hover:text-purple-600 hover:bg-white rounded ${isRefreshing ? 'animate-spin' : ''}`}
+                            title="Làm mới"
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw size={16} />
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                            title="Đóng ghi chú"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 ) : (
-                    <button
-                        onClick={() => setIsCollapsed(true)}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
-                    >
-                        <ChevronRight size={18} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                        <button
+                            onClick={handleRefresh}
+                            className={`p-1.5 text-gray-400 hover:text-purple-600 hover:bg-white rounded ${isRefreshing ? 'animate-spin' : ''}`}
+                            title="Làm mới"
+                            disabled={isRefreshing}
+                        >
+                            <RefreshCw size={16} />
+                        </button>
+                        <button
+                            onClick={() => setIsCollapsed(true)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                        >
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
                 )}
             </div>
 
