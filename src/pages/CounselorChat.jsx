@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useChatRoom, URGENCY_LEVELS } from '../hooks/useChatRoom'
+import { useChatRoom, URGENCY_LEVELS, URGENCY_LABELS } from '../hooks/useChatRoom'
 import { useBroadcastOnline } from '../hooks/useOnlineStatus'
 import Navbar from '../components/Layout/Navbar'
 import ChatInterface from '../components/Chat/ChatInterface'
 import UrgencyBadge from '../components/Chat/UrgencyBadge'
+import UrgencySelector from '../components/Chat/UrgencySelector'
+import CounseledToggle from '../components/Chat/CounseledToggle'
 import StudentNotesPanel from '../components/Chat/StudentNotesPanel'
-import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle, StickyNote } from 'lucide-react'
+import { supabase } from '../lib/supabaseClient'
+import { MessageCircle, Users, Clock, EyeOff, Eye, Shield, AlertTriangle, StickyNote, CheckCircle2 } from 'lucide-react'
 
 // Background image - Psychology room
 const CHAT_BG = 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=1920&q=80'
@@ -175,13 +178,15 @@ export default function CounselorChat() {
                             {/* Avatar */}
                             <div className="relative">
                               <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg flex-shrink-0 ${
-                                urgencyLevel >= URGENCY_LEVELS.CRITICAL 
-                                  ? 'bg-gradient-to-br from-red-500 to-red-600 ring-2 ring-red-300 animate-pulse'
-                                  : urgencyLevel >= URGENCY_LEVELS.URGENT
-                                    ? 'bg-gradient-to-br from-orange-400 to-red-500'
-                                    : urgencyLevel >= URGENCY_LEVELS.ATTENTION
-                                      ? 'bg-gradient-to-br from-yellow-400 to-orange-400'
-                                      : 'bg-gradient-to-br from-purple-400 to-pink-400'
+                                urgencyLevel === URGENCY_LEVELS.COMPLETED
+                                  ? 'bg-gradient-to-br from-gray-400 to-gray-500'
+                                  : urgencyLevel >= URGENCY_LEVELS.CRITICAL 
+                                    ? 'bg-gradient-to-br from-red-500 to-red-600 ring-2 ring-red-300 animate-pulse'
+                                    : urgencyLevel >= URGENCY_LEVELS.URGENT
+                                      ? 'bg-gradient-to-br from-orange-400 to-red-500'
+                                      : urgencyLevel >= URGENCY_LEVELS.ATTENTION
+                                        ? 'bg-gradient-to-br from-yellow-400 to-orange-400'
+                                        : 'bg-gradient-to-br from-purple-400 to-pink-400'
                               }`}>
                                 {getStudentInitial(room)}
                               </div>
@@ -208,7 +213,14 @@ export default function CounselorChat() {
                               </div>
 
                               {/* Urgency Badge */}
-                              {urgencyLevel > 0 && (
+                              {urgencyLevel === URGENCY_LEVELS.COMPLETED ? (
+                                <div className="mb-1">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                                    <CheckCircle2 size={12} />
+                                    Đã hoàn thành
+                                  </span>
+                                </div>
+                              ) : urgencyLevel > 0 && (
                                 <div className="mb-1">
                                   <UrgencyBadge level={urgencyLevel} size="sm" showLabel={true} />
                                 </div>
@@ -257,11 +269,13 @@ export default function CounselorChat() {
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
                 {/* Chat Header */}
                 <div className={`px-6 py-4 ${
-                  selectedRoom.urgency_level >= URGENCY_LEVELS.CRITICAL
-                    ? 'bg-gradient-to-r from-red-500 to-red-600'
-                    : selectedRoom.urgency_level >= URGENCY_LEVELS.URGENT
-                      ? 'bg-gradient-to-r from-orange-500 to-red-500'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500'
+                  selectedRoom.urgency_level === URGENCY_LEVELS.COMPLETED
+                    ? 'bg-gradient-to-r from-gray-500 to-gray-600'
+                    : selectedRoom.urgency_level >= URGENCY_LEVELS.CRITICAL
+                      ? 'bg-gradient-to-r from-red-500 to-red-600'
+                      : selectedRoom.urgency_level >= URGENCY_LEVELS.URGENT
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500'
+                        : 'bg-gradient-to-r from-purple-500 to-pink-500'
                 }`}>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg relative">
@@ -310,6 +324,81 @@ export default function CounselorChat() {
                     >
                       <StickyNote size={20} />
                     </button>
+                  </div>
+                </div>
+
+                {/* Counselor Actions Bar */}
+                <div className="bg-gray-50 border-b px-6 py-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {/* Urgency Selector */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 font-medium">Mức độ:</span>
+                        <UrgencySelector
+                          currentLevel={selectedRoom.urgency_level ?? URGENCY_LEVELS.NORMAL}
+                          onSelect={async (level) => {
+                            try {
+                              // If setting to completed, also mark as counseled
+                              const updateData = level === URGENCY_LEVELS.COMPLETED
+                                ? {
+                                    urgency_level: level,
+                                    is_counseled: true,
+                                    counseled_at: new Date().toISOString(),
+                                    counseled_by: user?.id
+                                  }
+                                : {
+                                    urgency_level: level,
+                                    // If changing from completed to something else, remove counseled status
+                                    ...(selectedRoom.urgency_level === URGENCY_LEVELS.COMPLETED && {
+                                      is_counseled: false,
+                                      counseled_at: null,
+                                      counseled_by: null
+                                    })
+                                  }
+                              
+                              await supabase
+                                .from('chat_rooms')
+                                .update(updateData)
+                                .eq('id', selectedRoom.id)
+                              
+                              // Update local state
+                              setSelectedRoom(prev => ({
+                                ...prev,
+                                urgency_level: level,
+                                ...(updateData.is_counseled !== undefined && { is_counseled: updateData.is_counseled })
+                              }))
+                            } catch (error) {
+                              console.error('Error updating urgency:', error)
+                            }
+                          }}
+                          showCompleted={true}
+                        />
+                      </div>
+
+                      {/* Counseled Toggle */}
+                      <CounseledToggle
+                        chatRoomId={selectedRoom.id}
+                        isCounseled={selectedRoom.is_counseled || selectedRoom.urgency_level === URGENCY_LEVELS.COMPLETED}
+                        previousUrgencyLevel={selectedRoom.urgency_level > 0 ? selectedRoom.urgency_level : URGENCY_LEVELS.NORMAL}
+                        counselorId={user?.id}
+                        onToggle={(isCounseled, newUrgencyLevel) => {
+                          setSelectedRoom(prev => ({
+                            ...prev,
+                            is_counseled: isCounseled,
+                            urgency_level: newUrgencyLevel
+                          }))
+                        }}
+                        size="sm"
+                      />
+                    </div>
+
+                    {/* Status Info */}
+                    {selectedRoom.is_counseled && (
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <CheckCircle2 size={16} />
+                        <span>Đã hoàn thành tư vấn</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

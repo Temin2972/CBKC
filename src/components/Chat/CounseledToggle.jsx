@@ -1,20 +1,28 @@
 /**
  * CounseledToggle Component
  * Toggle button for counselors to mark chat as handled
+ * When completed, sets urgency_level to -1
  */
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle, Circle, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { URGENCY_LEVELS } from '../../hooks/useChatRoom'
 
 export default function CounseledToggle({
     chatRoomId,
     isCounseled = false,
+    previousUrgencyLevel = URGENCY_LEVELS.NORMAL,
     counselorId,
     onToggle,
     size = 'md'
 }) {
     const [loading, setLoading] = useState(false)
     const [localCounseled, setLocalCounseled] = useState(isCounseled)
+
+    // Sync with prop changes
+    useEffect(() => {
+        setLocalCounseled(isCounseled)
+    }, [isCounseled])
 
     const handleToggle = async () => {
         setLoading(true)
@@ -25,12 +33,14 @@ export default function CounseledToggle({
                 ? {
                     is_counseled: true,
                     counseled_at: new Date().toISOString(),
-                    counseled_by: counselorId
+                    counseled_by: counselorId,
+                    urgency_level: URGENCY_LEVELS.COMPLETED // Set to -1 when completed
                 }
                 : {
                     is_counseled: false,
                     counseled_at: null,
-                    counseled_by: null
+                    counseled_by: null,
+                    urgency_level: previousUrgencyLevel || URGENCY_LEVELS.NORMAL // Restore previous level
                 }
 
             const { error } = await supabase
@@ -41,7 +51,7 @@ export default function CounseledToggle({
             if (error) throw error
 
             setLocalCounseled(newValue)
-            onToggle?.(newValue)
+            onToggle?.(newValue, updateData.urgency_level)
         } catch (error) {
             console.error('Error toggling counseled status:', error)
         } finally {

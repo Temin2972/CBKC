@@ -331,6 +331,25 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
     const messageContent = newMessage
     setNewMessage('')
 
+    // If chat room is marked as completed (is_counseled), remove the completed status
+    // This is for students sending new messages after counseling was marked complete
+    if (chatRoom?.is_counseled && currentUser?.user_metadata?.role === 'student') {
+      try {
+        await supabase
+          .from('chat_rooms')
+          .update({
+            is_counseled: false,
+            counseled_at: null,
+            counseled_by: null,
+            urgency_level: 0 // Reset to NORMAL when student sends new message
+          })
+          .eq('id', chatRoom.id)
+        console.log('✅ Removed completed status - student sent new message')
+      } catch (err) {
+        console.error('Error removing completed status:', err)
+      }
+    }
+
     const { error } = await sendMessage(messageContent)
 
     if (error) {

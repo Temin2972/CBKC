@@ -3,33 +3,41 @@
  * Allows counselors to set urgency level for a chat
  */
 import { useState } from 'react'
-import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, ChevronDown } from 'lucide-react'
+import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, CheckCircle2, ChevronDown } from 'lucide-react'
 import { URGENCY_LEVELS, URGENCY_LABELS } from '../../hooks/useChatRoom'
 
 export default function UrgencySelector({
     currentLevel = URGENCY_LEVELS.NORMAL,
     onSelect,
     disabled = false,
-    compact = false
+    compact = false,
+    showCompleted = false // Whether to show COMPLETED option
 }) {
     const [isOpen, setIsOpen] = useState(false)
 
-    const levels = [
+    const allLevels = [
+        { level: URGENCY_LEVELS.COMPLETED, Icon: CheckCircle2 },
         { level: URGENCY_LEVELS.NORMAL, Icon: CheckCircle },
         { level: URGENCY_LEVELS.ATTENTION, Icon: AlertCircle },
         { level: URGENCY_LEVELS.URGENT, Icon: AlertTriangle },
         { level: URGENCY_LEVELS.CRITICAL, Icon: AlertOctagon }
     ]
 
+    // Filter out COMPLETED if not showing it
+    const levels = showCompleted 
+        ? allLevels 
+        : allLevels.filter(l => l.level !== URGENCY_LEVELS.COMPLETED)
+
     const colorClasses = {
+        gray: 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200',
         green: 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200',
         yellow: 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border-yellow-200',
         orange: 'bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200',
         red: 'bg-red-50 hover:bg-red-100 text-red-700 border-red-200'
     }
 
-    const currentInfo = URGENCY_LABELS[currentLevel]
-    const CurrentIcon = levels.find(l => l.level === currentLevel)?.Icon || CheckCircle
+    const currentInfo = URGENCY_LABELS[currentLevel] || URGENCY_LABELS[URGENCY_LEVELS.NORMAL]
+    const CurrentIcon = allLevels.find(l => l.level === currentLevel)?.Icon || CheckCircle
 
     const handleSelect = (level) => {
         onSelect(level)
@@ -121,7 +129,9 @@ export default function UrgencySelector({
                     ${level === currentLevel ? 'bg-purple-50' : 'hover:bg-gray-50'}
                   `}
                                 >
-                                    <span className={`p-1 rounded ${info.color === 'green' ? 'bg-green-100 text-green-600' :
+                                    <span className={`p-1 rounded ${
+                                        info.color === 'gray' ? 'bg-gray-100 text-gray-600' :
+                                        info.color === 'green' ? 'bg-green-100 text-green-600' :
                                             info.color === 'yellow' ? 'bg-yellow-100 text-yellow-600' :
                                                 info.color === 'orange' ? 'bg-orange-100 text-orange-600' :
                                                     'bg-red-100 text-red-600'

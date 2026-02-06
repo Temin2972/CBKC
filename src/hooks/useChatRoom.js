@@ -4,6 +4,7 @@ import { createNotification } from './useNotifications'
 
 // Urgency level constants
 export const URGENCY_LEVELS = {
+  COMPLETED: -1,  // Counseling completed
   NORMAL: 0,
   ATTENTION: 1,
   URGENT: 2,
@@ -11,6 +12,7 @@ export const URGENCY_LEVELS = {
 }
 
 export const URGENCY_LABELS = {
+  [URGENCY_LEVELS.COMPLETED]: { label: 'Đã hoàn thành', color: 'gray', icon: '✅' },
   [URGENCY_LEVELS.NORMAL]: { label: 'Bình thường', color: 'green', icon: '🟢' },
   [URGENCY_LEVELS.ATTENTION]: { label: 'Cần chú ý', color: 'yellow', icon: '🟡' },
   [URGENCY_LEVELS.URGENT]: { label: 'Khẩn cấp', color: 'orange', icon: '🟠' },

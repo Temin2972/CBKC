@@ -2,7 +2,7 @@
  * UrgencyBadge Component
  * Displays the urgency level of a chat room
  */
-import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle } from 'lucide-react'
+import { AlertTriangle, AlertCircle, AlertOctagon, CheckCircle, CheckCircle2 } from 'lucide-react'
 import { URGENCY_LEVELS, URGENCY_LABELS } from '../../hooks/useChatRoom'
 
 export default function UrgencyBadge({ level, size = 'md', showLabel = true }) {
@@ -15,6 +15,7 @@ export default function UrgencyBadge({ level, size = 'md', showLabel = true }) {
     }
 
     const colorClasses = {
+        gray: 'bg-gray-100 text-gray-700 border-gray-200',
         green: 'bg-green-100 text-green-700 border-green-200',
         yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
         orange: 'bg-orange-100 text-orange-700 border-orange-200',
@@ -25,6 +26,8 @@ export default function UrgencyBadge({ level, size = 'md', showLabel = true }) {
 
     const Icon = () => {
         switch (level) {
+            case URGENCY_LEVELS.COMPLETED:
+                return <CheckCircle2 size={iconSize} />
             case URGENCY_LEVELS.CRITICAL:
                 return <AlertOctagon size={iconSize} className="animate-pulse" />
             case URGENCY_LEVELS.URGENT:
