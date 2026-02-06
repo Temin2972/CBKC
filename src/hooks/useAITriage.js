@@ -24,7 +24,7 @@ export function useAITriage(chatRoomId, chatRoom) {
     const sendAIMessage = useCallback(async (content, assessmentData = null) => {
         try {
             // Format AI message with marker (metadata column doesn't exist in DB)
-            const aiContent = `🤖 **Tâm An:** ${content}`
+            const aiContent = `${content}`
             
             const messageData = {
                 chat_room_id: chatRoomId,
@@ -151,7 +151,6 @@ export function useAITriage(chatRoomId, chatRoom) {
     const isAIMessage = (message) => {
         return message.is_system && (
             message.sender_id === null ||
-            message.content?.includes('🤖') ||
             message.content?.includes('Tâm An')
         )
     }
