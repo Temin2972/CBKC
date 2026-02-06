@@ -73,19 +73,42 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
 
 `
 
-      // Try to insert new note first (students can only insert, not read/update)
+      // Try to insert new note first
       const { data, error } = await supabase
         .from('student_notes')
         .insert({
           student_id: studentId,
           content: aiNoteEntry
+          // updated_by is NULL - allows future AI updates
         })
         .select()
 
       if (error) {
-        // If duplicate (note already exists), that's fine - counselor will update it
+        // If duplicate (note already exists), try to update
         if (error.code === '23505') { // unique_violation
-          console.log('ℹ️ Student notes already exist, skipping AI assessment save (counselor can update)')
+          console.log('ℹ️ Note exists, trying to prepend AI assessment...')
+          
+          // Try to update (will only work if updated_by is NULL)
+          const { data: updateData, error: updateError } = await supabase
+            .from('student_notes')
+            .update({
+              content: supabase.sql`${aiNoteEntry} || content`,
+              updated_at: new Date().toISOString()
+              // Keep updated_by as NULL so AI can continue updating
+            })
+            .eq('student_id', studentId)
+            .select()
+
+          if (updateError) {
+            // RLS blocked - counselor has already updated the note
+            if (updateError.code === '42501') {
+              console.log('ℹ️ Counselor has updated notes, skipping AI assessment')
+            } else {
+              console.error('❌ Error updating AI assessment:', updateError)
+            }
+          } else {
+            console.log('✅ AI assessment prepended to existing notes:', updateData)
+          }
         } else {
           console.error('❌ Error saving AI assessment to notes:', error)
         }
