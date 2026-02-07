@@ -95,14 +95,14 @@ export default function LandingPage() {
               </div>
 
               {/* Main Heading */}
-              <h1 className="text-4xl md:text-6xl font-bold mb-5 text-gray-800 leading-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+              <h1 className="text-4xl md:text-6xl font-bold mb-5 text-gray-800 leading-tight shadow-lg">
                 Nơi an toàn để
                 <br />
-                <span className="text-teal-600">bạn được lắng nghe</span>
+                <span className="text-teal-400">bạn được lắng nghe</span>
               </h1>
 
               {/* Subtitle */}
-              <p className="text-lg md:text-xl text-gray-800 mb-8 max-w-2xl mx-auto leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+              <p className="text-lg md:text-xl text-gray-800 mb-8 max-w-2xl mx-auto leading-relaxed shadow-lg">
                 Kết nối với tư vấn viên tâm lý hoặc chia sẻ ẩn danh trong cộng đồng an toàn, được bảo vệ bởi AI
               </p>
 
