@@ -156,7 +156,6 @@ export default function Community() {
           image_url: imageUrl,
           pending_reason: 'Bài viết có hình ảnh cần tư vấn viên duyệt thủ công',
           status: 'pending',
-          is_anonymous: isAnonymous,
           topic: postTopic
         })
 
@@ -395,7 +394,7 @@ export default function Community() {
               <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Tìm kiếm confession..."
+                placeholder="Tìm kiếm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-11 pr-4 py-2.5 bg-white/90 backdrop-blur-sm rounded-full border-0 shadow-md text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 w-48"
@@ -430,7 +429,7 @@ export default function Community() {
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all font-medium"
             >
               <Plus size={18} />
-              Đăng confession
+              Đăng bài
             </button>
           </div>
 

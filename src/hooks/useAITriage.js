@@ -33,7 +33,7 @@ export function useAITriage(chatRoomId, chatRoom) {
             await supabase.from('chat_messages').insert(messageData)
 
             // Track in conversation history
-            conversationHistoryRef.current.push({m
+            conversationHistoryRef.current.push({
                 content,
                 isAI: true
             })
