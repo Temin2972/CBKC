@@ -11,12 +11,14 @@ import {
   ChevronUp,
   Loader2,
   Brain,
-  Coffee
+  Coffee,
+  ZoomIn
 } from 'lucide-react'
 import { usePendingContent } from '../../hooks/usePendingContent'
 import { FLAG_LEVELS } from '../../lib/contentModeration'
 import { supabase } from '../../lib/supabaseClient'
 import { POST_TOPICS, TOPIC_LABELS } from '../../constants'
+import ImageLightbox from '../UI/ImageLightbox'
 
 const TOPIC_CONFIG = {
   [POST_TOPICS.MENTAL]: { label: TOPIC_LABELS[POST_TOPICS.MENTAL], icon: Brain, color: 'purple' },
@@ -38,6 +40,7 @@ export default function PendingSection() {
   const [showFlagOptions, setShowFlagOptions] = useState(null)
   const [chattingUserId, setChattingUserId] = useState(null)
   const [selectedTopics, setSelectedTopics] = useState({}) // Track topic selection per item
+  const [lightboxImage, setLightboxImage] = useState(null) // For image viewer
 
   const toggleExpand = (id) => {
     const newExpanded = new Set(expandedItems)
@@ -263,11 +266,18 @@ export default function PendingSection() {
                     </p>
                     
                     {item.image_url && (
-                      <img
-                        src={item.image_url}
-                        alt="Attached"
-                        className="mt-3 max-h-48 rounded-lg object-cover"
-                      />
+                      <div className="relative mt-3 group cursor-pointer" onClick={() => setLightboxImage(item.image_url)}>
+                        <img
+                          src={item.image_url}
+                          alt="Attached"
+                          className="max-h-48 rounded-lg object-cover transition-opacity group-hover:opacity-90"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
+                          <div className="bg-white/90 rounded-full p-2">
+                            <ZoomIn size={20} className="text-gray-700" />
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -401,6 +411,15 @@ export default function PendingSection() {
           )
         })}
       </div>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <ImageLightbox
+          src={lightboxImage}
+          alt="Hình ảnh đính kèm"
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </div>
   )
 }

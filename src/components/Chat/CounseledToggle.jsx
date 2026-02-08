@@ -67,7 +67,8 @@ export default function CounseledToggle({
     // Send feedback prompt message to chat
     const sendFeedbackPrompt = async (roomId) => {
         try {
-            const feedbackMessage = `Nếu phiên tư vấn đã hoàn thành, hy vọng em có thể giúp chúng mình cải thiện dịch vụ bằng cách đánh giá phiên tư vấn
+            const feedbackMessage = `Nếu phiên tư vấn đã hoàn thành, hy vọng em có thể giúp chúng mình cải thiện dịch vụ bằng cách đánh giá phiên tư vấn này.
+
 Mọi phản hồi của em đều rất quý giá với chúng mình! ❤️
 
 [ Phản hồi ](/feedback)`
