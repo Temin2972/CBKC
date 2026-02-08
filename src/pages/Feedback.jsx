@@ -73,7 +73,7 @@ export default function Feedback() {
       ])
     } else {
       const { data } = await supabase
-        .from('profiles')
+        .from('users')
         .select('id, full_name')
         .in('role', ['counselor', 'admin'])
       

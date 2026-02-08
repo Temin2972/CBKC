@@ -50,12 +50,41 @@ export default function CounseledToggle({
 
             if (error) throw error
 
+            // If marking as completed, send feedback prompt message
+            if (newValue) {
+                await sendFeedbackPrompt(chatRoomId)
+            }
+
             setLocalCounseled(newValue)
             onToggle?.(newValue, updateData.urgency_level)
         } catch (error) {
             console.error('Error toggling counseled status:', error)
         } finally {
             setLoading(false)
+        }
+    }
+
+    // Send feedback prompt message to chat
+    const sendFeedbackPrompt = async (roomId) => {
+        try {
+            const feedbackMessage = `✅ **Phiên tư vấn đã hoàn thành!**
+
+Cảm ơn em đã tin tưởng và chia sẻ với chúng mình. Hy vọng buổi tư vấn đã giúp em phần nào.
+
+💬 **Em có thể giúp chúng mình cải thiện dịch vụ bằng cách đánh giá phiên tư vấn:**
+
+[👉 Đánh giá ngay](/feedback)
+
+Mọi phản hồi của em đều rất quý giá với chúng mình! ❤️`
+
+            await supabase.from('chat_messages').insert({
+                chat_room_id: roomId,
+                sender_id: null,
+                content: feedbackMessage,
+                is_system: true
+            })
+        } catch (error) {
+            console.error('Error sending feedback prompt:', error)
         }
     }
 

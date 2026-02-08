@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { useChatMessages } from '../../hooks/useChatMessages'
 import { useUnreadMessages } from '../../hooks/useUnreadMessages'
 import { Send, Trash2, Bot, Sparkles } from 'lucide-react'
@@ -12,6 +13,32 @@ const AI_RESPONSE_DELAY = 0
 const AI_INTRO_MESSAGE = `Chào em! 👋 Hiện tại các thầy cô đang bận, nhưng mình là Tâm An - trợ lý tâm lý của S-Net để giúp em trong quá trình chờ thầy cô nha! 
 
 Mình sẵn sàng lắng nghe em chia sẻ. Em có thể kể cho mình nghe em đang cảm thấy như thế nào không? 💭`
+
+// Parse message content to render markdown-style links as clickable
+const parseMessageContent = (content) => {
+  // Match markdown links: [text](url)
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+  const parts = []
+  let lastIndex = 0
+  let match
+
+  while ((match = linkRegex.exec(content)) !== null) {
+    // Add text before the link
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: content.slice(lastIndex, match.index) })
+    }
+    // Add the link
+    parts.push({ type: 'link', text: match[1], url: match[2] })
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    parts.push({ type: 'text', content: content.slice(lastIndex) })
+  }
+
+  return parts.length > 0 ? parts : [{ type: 'text', content }]
+}
 
 export default function ChatInterface({ chatRoom, currentUser }) {
   const { messages, loading, sending, sendMessage, deleteMessage } = useChatMessages(
@@ -478,10 +505,26 @@ ${assessment.summary ? `📝 Tóm tắt: ${assessment.summary}` : ''}
                     {getSenderDisplayName(message)}
                   </div>
 
-                  {/* Message Content */}
-                  <p className="whitespace-pre-wrap break-words">
-                    {message.content}
-                  </p>
+                  {/* Message Content - with link parsing for system messages */}
+                  <div className="whitespace-pre-wrap break-words">
+                    {parseMessageContent(message.content).map((part, idx) => 
+                      part.type === 'link' ? (
+                        <Link 
+                          key={idx}
+                          to={part.url}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium transition-all hover:scale-105 ${
+                            isAIMessage(message) || message.is_mine
+                              ? 'bg-white/20 hover:bg-white/30 text-white underline'
+                              : 'bg-purple-100 hover:bg-purple-200 text-purple-700'
+                          }`}
+                        >
+                          {part.text}
+                        </Link>
+                      ) : (
+                        <span key={idx}>{part.content}</span>
+                      )
+                    )}
+                  </div>
 
                   {/* Timestamp and Delete Button */}
                   <div className="flex items-center justify-between mt-2 gap-3">
