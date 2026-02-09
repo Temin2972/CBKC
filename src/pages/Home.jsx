@@ -157,6 +157,7 @@ export default function Home() {
 
           {/* Main Feature Cards */}
           <section className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-6 drop-shadow-lg">Dịch vụ chính</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Chat Card */}
               <Link
@@ -267,6 +268,7 @@ export default function Home() {
           {/* Counselor-only Sections */}
           {isCounselor && (
             <section className="space-y-8">
+              <h2 className="text-2xl font-bold text-white drop-shadow-lg">Công cụ tư vấn viên</h2>
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                   <CautionSection />

@@ -237,14 +237,14 @@ export default function CautionSection() {
                         handleChatWithStudent(userGroup.userId)
                       }}
                       disabled={chattingUserId === userGroup.userId}
-                      className="px-2 py-1.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-1 text-xs disabled:opacity-50 whitespace-nowrap"
+                      className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 text-sm disabled:opacity-50 whitespace-nowrap"
                     >
                       {chattingUserId === userGroup.userId ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={16} className="animate-spin" />
                       ) : (
                         <>
-                          <MessageCircle size={14} />
-                          <span className="hidden sm:inline">Chat ngay</span>
+                          <MessageCircle size={16} />
+                          <span>Chat ngay</span>
                         </>
                       )}
                     </button>
