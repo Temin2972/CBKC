@@ -25,7 +25,12 @@ import {
   Edit3,
   ToggleLeft,
   ToggleRight,
-  Calendar
+  Calendar,
+  Eye,
+  Users,
+  FileText,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react'
 import { formatDistanceToNow } from '../utils/formatters'
 
@@ -51,6 +56,13 @@ export default function Survey() {
     deadline: ''
   })
   const [savingSurvey, setSavingSurvey] = useState(false)
+  
+  // View responses state
+  const [showResponsesModal, setShowResponsesModal] = useState(false)
+  const [viewingSurvey, setViewingSurvey] = useState(null)
+  const [surveyResponses, setSurveyResponses] = useState([])
+  const [loadingResponses, setLoadingResponses] = useState(false)
+  const [expandedResponse, setExpandedResponse] = useState(null)
 
   useEffect(() => {
     if (isCounselor) {
@@ -323,11 +335,108 @@ export default function Survey() {
     }
   }
 
-  const handleOpenSurvey = (survey) => {
+  // View survey responses (for counselors)
+  const handleViewResponses = async (survey, e) => {
+    e.stopPropagation()
+    setViewingSurvey(survey)
+    setShowResponsesModal(true)
+    setLoadingResponses(true)
+    setSurveyResponses([])
+    setExpandedResponse(null)
+
+    try {
+      if (isDemoMode) {
+        // Demo responses
+        setSurveyResponses([
+          {
+            id: 'resp-1',
+            created_at: new Date().toISOString(),
+            responses: survey.questions.reduce((acc, q) => {
+              if (q.type === 'scale') acc[q.id] = 4
+              else if (q.type === 'multiple_choice') acc[q.id] = q.options?.[0]
+              else acc[q.id] = 'Câu trả lời mẫu'
+              return acc
+            }, {})
+          }
+        ])
+      } else {
+        const { data, error } = await supabase
+          .from('survey_responses')
+          .select('*')
+          .eq('survey_id', survey.id)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        setSurveyResponses(data || [])
+      }
+    } catch (err) {
+      console.error('Error loading responses:', err)
+    } finally {
+      setLoadingResponses(false)
+    }
+  }
+
+  // Calculate response statistics for a question
+  const getQuestionStats = (question) => {
+    if (!surveyResponses.length) return null
+
+    if (question.type === 'scale') {
+      const values = surveyResponses
+        .map(r => r.responses?.[question.id])
+        .filter(v => typeof v === 'number')
+      
+      if (!values.length) return null
+      
+      const avg = values.reduce((a, b) => a + b, 0) / values.length
+      const distribution = {}
+      for (let i = 1; i <= 5; i++) {
+        distribution[i] = values.filter(v => v === i).length
+      }
+      
+      return { average: avg.toFixed(1), distribution, total: values.length }
+    }
+
+    if (question.type === 'multiple_choice') {
+      const distribution = {}
+      question.options?.forEach(opt => {
+        distribution[opt] = surveyResponses.filter(r => r.responses?.[question.id] === opt).length
+      })
+      return { distribution, total: surveyResponses.length }
+    }
+
+    if (question.type === 'text') {
+      const textResponses = surveyResponses
+        .map(r => r.responses?.[question.id])
+        .filter(v => v && typeof v === 'string')
+      return { responses: textResponses, total: textResponses.length }
+    }
+
+    return null
+  }
+
+  const handleOpenSurvey = async (survey) => {
     setSelectedSurvey(survey)
     setResponses({})
     setSubmitted(false)
     setError('')
+    
+    // Check if user has already responded (non-anonymous surveys)
+    if (!isDemoMode && userId && !survey.is_anonymous) {
+      try {
+        const { data } = await supabase
+          .from('survey_responses')
+          .select('id')
+          .eq('survey_id', survey.id)
+          .eq('user_id', userId)
+          .single()
+        
+        if (data) {
+          setSubmitted(true) // Show "already submitted" state
+        }
+      } catch (err) {
+        // No existing response, that's fine
+      }
+    }
   }
 
   const handleResponseChange = (questionId, value) => {
@@ -350,12 +459,22 @@ export default function Survey() {
 
     try {
       if (!isDemoMode) {
-        await supabase.from('survey_responses').insert({
+        const { error } = await supabase.from('survey_responses').insert({
           survey_id: selectedSurvey.id,
           user_id: userId,
           responses: responses,
           created_at: new Date().toISOString()
         })
+        
+        // Handle duplicate submission (409 Conflict)
+        if (error) {
+          if (error.code === '23505' || error.message?.includes('duplicate')) {
+            setError('Bạn đã trả lời khảo sát này rồi!')
+            setSubmitted(true)
+            return
+          }
+          throw error
+        }
       }
       
       setSubmitted(true)
@@ -629,6 +748,13 @@ export default function Survey() {
                   {/* Counselor Actions */}
                   {isCounselor && (
                     <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={(e) => handleViewResponses(survey, e)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      >
+                        <Eye size={14} />
+                        Xem kết quả ({survey.responses_count || 0})
+                      </button>
                       <button
                         onClick={(e) => handleEditSurvey(survey, e)}
                         className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
@@ -904,6 +1030,193 @@ export default function Survey() {
             icon={editingSurvey ? CheckCircle2 : Plus}
           >
             {editingSurvey ? 'Cập nhật' : 'Tạo khảo sát'}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* View Responses Modal */}
+      <Modal
+        isOpen={showResponsesModal}
+        onClose={() => {
+          setShowResponsesModal(false)
+          setViewingSurvey(null)
+          setSurveyResponses([])
+        }}
+        title={`Kết quả: ${viewingSurvey?.title || ''}`}
+        size="xl"
+      >
+        <div className="max-h-[70vh] overflow-y-auto">
+          {loadingResponses ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+            </div>
+          ) : surveyResponses.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <ClipboardList size={48} className="mx-auto mb-4 text-gray-300" />
+              <p>Chưa có câu trả lời nào</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Summary Header */}
+              <div className="bg-teal-50 rounded-xl p-4 flex items-center gap-4">
+                <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                  <Users size={24} className="text-teal-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-teal-700">{surveyResponses.length}</p>
+                  <p className="text-sm text-teal-600">Tổng số câu trả lời</p>
+                </div>
+              </div>
+
+              {/* Question Statistics */}
+              {viewingSurvey?.questions?.map((question, qIndex) => {
+                const stats = getQuestionStats(question)
+                
+                return (
+                  <div key={question.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-start gap-3 mb-4">
+                      <span className="inline-flex items-center justify-center w-7 h-7 bg-teal-100 text-teal-600 rounded-full text-sm font-medium">
+                        {qIndex + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-800">{question.question}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          question.type === 'scale' ? 'bg-purple-100 text-purple-600' :
+                          question.type === 'multiple_choice' ? 'bg-blue-100 text-blue-600' :
+                          'bg-green-100 text-green-600'
+                        }`}>
+                          {question.type === 'scale' ? 'Thang điểm' :
+                           question.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Tự luận'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Scale Results */}
+                    {question.type === 'scale' && stats && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-4">
+                          <div className="text-center">
+                            <p className="text-3xl font-bold text-purple-600">{stats.average}</p>
+                            <p className="text-xs text-gray-500">Điểm TB</p>
+                          </div>
+                          <div className="flex-1">
+                            {[5, 4, 3, 2, 1].map(score => {
+                              const count = stats.distribution[score] || 0
+                              const percent = stats.total ? (count / stats.total * 100) : 0
+                              return (
+                                <div key={score} className="flex items-center gap-2 text-sm">
+                                  <span className="w-4 text-gray-500">{score}</span>
+                                  <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                                    <div 
+                                      className="bg-purple-400 h-full rounded-full transition-all"
+                                      style={{ width: `${percent}%` }}
+                                    />
+                                  </div>
+                                  <span className="w-8 text-xs text-gray-500">{count}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        {question.scale?.labels && (
+                          <div className="flex justify-between text-xs text-gray-400 pt-2 border-t">
+                            <span>1 = {question.scale.labels[0]}</span>
+                            <span>5 = {question.scale.labels[4]}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Multiple Choice Results */}
+                    {question.type === 'multiple_choice' && stats && (
+                      <div className="space-y-2">
+                        {question.options?.map((option, i) => {
+                          const count = stats.distribution[option] || 0
+                          const percent = stats.total ? (count / stats.total * 100) : 0
+                          return (
+                            <div key={i} className="space-y-1">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-700">{option}</span>
+                                <span className="text-gray-500">{count} ({percent.toFixed(0)}%)</span>
+                              </div>
+                              <div className="bg-gray-100 rounded-full h-3 overflow-hidden">
+                                <div 
+                                  className="bg-blue-400 h-full rounded-full transition-all"
+                                  style={{ width: `${percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Text Responses */}
+                    {question.type === 'text' && stats && (
+                      <div className="space-y-2">
+                        <p className="text-sm text-gray-500">{stats.total} câu trả lời</p>
+                        <div className="max-h-60 overflow-y-auto space-y-2">
+                          {stats.responses.map((resp, i) => (
+                            <div key={i} className="bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
+                              "{resp}"
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* Individual Responses (Expandable) */}
+              <div className="border-t border-gray-200 pt-4">
+                <button
+                  onClick={() => setExpandedResponse(expandedResponse ? null : 'all')}
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-teal-600"
+                >
+                  {expandedResponse ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <FileText size={16} />
+                  Xem từng câu trả lời chi tiết
+                </button>
+                
+                {expandedResponse && (
+                  <div className="mt-4 space-y-3">
+                    {surveyResponses.map((response, idx) => (
+                      <div key={response.id} className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3 text-sm text-gray-500">
+                          <span className="font-medium">Người trả lời #{idx + 1}</span>
+                          <span>•</span>
+                          <span>{new Date(response.created_at).toLocaleString('vi-VN')}</span>
+                        </div>
+                        <div className="space-y-2">
+                          {viewingSurvey?.questions?.map((q, qi) => (
+                            <div key={q.id} className="flex gap-2 text-sm">
+                              <span className="text-gray-400 w-6">{qi + 1}.</span>
+                              <span className="text-gray-600">
+                                {response.responses?.[q.id] ?? <em className="text-gray-400">Không trả lời</em>}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowResponsesModal(false)
+              setViewingSurvey(null)
+              setSurveyResponses([])
+            }}
+          >
+            Đóng
           </Button>
         </div>
       </Modal>
