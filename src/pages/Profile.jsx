@@ -60,7 +60,6 @@ export default function Profile() {
       }
     }
   }
-  }
 
   const handleSave = async () => {
     setLoading(true)
