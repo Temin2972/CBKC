@@ -1,6 +1,7 @@
 /**
  * Profile Page Component
  * User profile customization with avatar presets
+ * Counselors can upload custom photos
  */
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
@@ -15,12 +16,16 @@ import {
   Camera,
   Mail,
   GraduationCap,
-  Shield
+  Shield,
+  Upload,
+  Loader2,
+  X
 } from 'lucide-react'
 
 export default function Profile() {
   const { user, isCounselor, isAdmin, role } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   
@@ -58,6 +63,49 @@ export default function Profile() {
         setSelectedAvatar(user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
         setBio(user.user_metadata?.bio || '')
       }
+    }
+  }
+
+  // Handle photo upload (counselors only)
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      setError('Vui lòng chọn file ảnh')
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      setError('Kích thước ảnh không được vượt quá 5MB')
+      return
+    }
+
+    setUploading(true)
+    setError('')
+
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data } = supabase.storage.from('avatars').getPublicUrl(fileName)
+      
+      setSelectedAvatar(data.publicUrl)
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError('Không thể tải ảnh lên. Vui lòng thử lại.')
+    } finally {
+      setUploading(false)
     }
   }
 
@@ -199,6 +247,64 @@ export default function Profile() {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               Chọn ảnh đại diện
             </label>
+            
+            {/* Photo Upload for Counselors */}
+            {(isCounselor || isAdmin) && (
+              <div className="mb-4">
+                <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border-2 border-dashed border-purple-300">
+                  <div className="relative">
+                    {selectedAvatar && !AVATAR_PRESETS.some(a => a.url === selectedAvatar) ? (
+                      <div className="relative">
+                        <img 
+                          src={selectedAvatar} 
+                          alt="Custom avatar"
+                          className="w-16 h-16 rounded-full object-cover"
+                        />
+                        <button
+                          onClick={() => setSelectedAvatar(AVATAR_PRESETS[0].url)}
+                          className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                        <Camera size={24} className="text-purple-500" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800 mb-1">Tải ảnh của bạn</p>
+                    <p className="text-sm text-gray-500 mb-2">PNG, JPG tối đa 5MB</p>
+                    <label className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg cursor-pointer hover:bg-purple-600 transition-colors text-sm">
+                      {uploading ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Đang tải...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} />
+                          Chọn ảnh
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  — hoặc chọn từ bộ sưu tập bên dưới —
+                </p>
+              </div>
+            )}
+
+            {/* Preset Avatars */}
             <div className="grid grid-cols-5 gap-3">
               {AVATAR_PRESETS.map(avatar => (
                 <button

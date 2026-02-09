@@ -17,7 +17,7 @@ export function useCounselors() {
       // Lấy danh sách tư vấn viên và admin (cả hai đều có thể tư vấn)
       const { data, error } = await supabase
         .from('users')
-        .select('id, full_name, email, specialty, avatar_url, role')
+        .select('id, full_name, email, specialty, avatar_url, role, bio')
         .in('role', ['counselor', 'admin'])
         .order('full_name', { ascending: true })
 

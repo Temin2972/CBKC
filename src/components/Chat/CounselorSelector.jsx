@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Check, ChevronRight, User, Sparkles, X, AlertTriangle, Shield, Eye, EyeOff } from 'lucide-react'
+import { Check, ChevronRight, User, Sparkles, X, AlertTriangle, Shield, Eye, EyeOff, Info } from 'lucide-react'
 import { useOnlineStatus } from '../../hooks/useOnlineStatus'
+import CounselorProfileModal from './CounselorProfileModal'
 
 export default function CounselorSelector({ 
   counselors, 
@@ -10,6 +11,7 @@ export default function CounselorSelector({
 }) {
   const [selectedCounselor, setSelectedCounselor] = useState(null)
   const [isPrivate, setIsPrivate] = useState(false)
+  const [viewingProfile, setViewingProfile] = useState(null) // For profile modal
   
   // Track online status của tất cả counselors
   const counselorIds = counselors.map(c => c.id)
@@ -74,30 +76,41 @@ export default function CounselorSelector({
             const online = isOnline(counselor.id)
             
             return (
-              <button
+              <div
                 key={counselor.id}
-                onClick={() => handleSelect(counselor)}
-                className={`w-full p-4 rounded-xl border-2 transition-all text-left group hover:shadow-lg ${
+                className={`p-4 rounded-xl border-2 transition-all ${
                   selectedCounselor?.id === counselor.id
                     ? 'border-purple-500 bg-purple-50 shadow-lg'
                     : 'border-gray-200 bg-white hover:border-purple-300'
                 }`}
               >
-                <div className="flex items-center gap-4">
-                  {/* Avatar with online indicator */}
-                  <div className="relative">
-                    <div className={`w-14 h-14 bg-gradient-to-br ${counselor.avatarColor} rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                      {counselor.displayName[0]}
+                <button
+                  onClick={() => handleSelect(counselor)}
+                  className="w-full text-left group"
+                >
+                  <div className="flex items-center gap-4">
+                    {/* Avatar with online indicator */}
+                    <div className="relative">
+                      {counselor.avatar_url ? (
+                        <img 
+                          src={counselor.avatar_url} 
+                          alt={counselor.displayName}
+                          className="w-14 h-14 rounded-full object-cover flex-shrink-0 group-hover:scale-110 transition-transform"
+                        />
+                      ) : (
+                        <div className={`w-14 h-14 bg-gradient-to-br ${counselor.avatarColor} rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                          {counselor.displayName[0]}
+                        </div>
+                      )}
+                      {/* Online indicator */}
+                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+                        online ? 'bg-green-500' : 'bg-gray-400'
+                      }`} title={online ? 'Đang online' : 'Offline'}></div>
                     </div>
-                    {/* Online indicator */}
-                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                      online ? 'bg-green-500' : 'bg-gray-400'
-                    }`} title={online ? 'Đang online' : 'Offline'}></div>
-                  </div>
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-semibold text-gray-800 truncate">
                         {counselor.displayName}
                       </h4>
@@ -128,7 +141,20 @@ export default function CounselorSelector({
                     )}
                   </div>
                 </div>
-              </button>
+                </button>
+                
+                {/* View Profile Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setViewingProfile(counselor)
+                  }}
+                  className="mt-2 w-full py-2 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors flex items-center justify-center gap-1"
+                >
+                  <Info size={14} />
+                  Xem hồ sơ
+                </button>
+              </div>
             )
           })
         )}
@@ -232,9 +258,17 @@ export default function CounselorSelector({
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200 animate-fade-in">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className={`w-10 h-10 bg-gradient-to-br ${selectedCounselor.avatarColor} rounded-full flex items-center justify-center text-white font-bold`}>
-                {selectedCounselor.displayName[0]}
-              </div>
+              {selectedCounselor.avatar_url ? (
+                <img 
+                  src={selectedCounselor.avatar_url} 
+                  alt={selectedCounselor.displayName}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className={`w-10 h-10 bg-gradient-to-br ${selectedCounselor.avatarColor} rounded-full flex items-center justify-center text-white font-bold`}>
+                  {selectedCounselor.displayName[0]}
+                </div>
+              )}
               {isOnline(selectedCounselor.id) && (
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
               )}
@@ -255,6 +289,15 @@ export default function CounselorSelector({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Counselor Profile Modal */}
+      {viewingProfile && (
+        <CounselorProfileModal
+          counselor={viewingProfile}
+          isOnline={isOnline(viewingProfile.id)}
+          onClose={() => setViewingProfile(null)}
+        />
       )}
     </div>
   )
