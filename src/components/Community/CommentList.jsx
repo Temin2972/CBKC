@@ -28,9 +28,9 @@ export default function CommentList({
     await onDeleteComment(commentId)
   }
 
-  const handleCreateComment = async (content) => {
-    console.log('Creating comment:', content)
-    const result = await onCreateComment(content, null)
+  const handleCreateComment = async (content, isAnonymous = false) => {
+    console.log('Creating comment:', content, 'anonymous:', isAnonymous)
+    const result = await onCreateComment(content, null, isAnonymous)
     console.log('Comment create result:', result)
     return result
   }
@@ -38,9 +38,9 @@ export default function CommentList({
   const handleCreateReply = (parentId, onClose) => {
     return (
       <CommentForm
-        onSubmit={async (content) => {
-          console.log('Creating reply to:', parentId, content)
-          const result = await onCreateComment(content, parentId)
+        onSubmit={async (content, isAnonymous = false) => {
+          console.log('Creating reply to:', parentId, content, 'anonymous:', isAnonymous)
+          const result = await onCreateComment(content, parentId, isAnonymous)
           console.log('Reply create result:', result)
           return result
         }}

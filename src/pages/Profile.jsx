@@ -15,8 +15,7 @@ import {
   Camera,
   Mail,
   GraduationCap,
-  Shield,
-  Sparkles
+  Shield
 } from 'lucide-react'
 
 export default function Profile() {
@@ -29,8 +28,6 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState('')
   const [selectedAvatar, setSelectedAvatar] = useState('')
   const [bio, setBio] = useState('')
-  const [isAnonymous, setIsAnonymous] = useState(false)
-  const [anonymousName, setAnonymousName] = useState('')
 
   useEffect(() => {
     if (user) {
@@ -43,29 +40,26 @@ export default function Profile() {
       setDisplayName(user.user_metadata?.full_name || '')
       setSelectedAvatar(user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
       setBio(user.user_metadata?.bio || '')
-      setIsAnonymous(user.user_metadata?.is_anonymous || false)
-      setAnonymousName(user.user_metadata?.anonymous_name || generateAnonymousName())
     } else {
+      // First try to get from users table
       const { data } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*')
         .eq('id', user.id)
         .single()
       
       if (data) {
-        setDisplayName(data.full_name || '')
-        setSelectedAvatar(data.avatar_url || AVATAR_PRESETS[0].url)
+        setDisplayName(data.full_name || user.user_metadata?.full_name || '')
+        setSelectedAvatar(data.avatar_url || user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
         setBio(data.bio || '')
-        setIsAnonymous(data.is_anonymous || false)
-        setAnonymousName(data.anonymous_name || generateAnonymousName())
+      } else {
+        // Fallback to user metadata from auth
+        setDisplayName(user.user_metadata?.full_name || '')
+        setSelectedAvatar(user.user_metadata?.avatar_url || AVATAR_PRESETS[0].url)
+        setBio(user.user_metadata?.bio || '')
       }
     }
   }
-
-  const generateAnonymousName = () => {
-    const adjectives = ['Vui Vẻ', 'Năng Động', 'Thông Minh', 'Dũng Cảm', 'Tự Tin', 'Lạc Quan']
-    const nouns = ['Sóc', 'Cáo', 'Gấu', 'Thỏ', 'Mèo', 'Chim']
-    return `${adjectives[Math.floor(Math.random() * adjectives.length)]} ${nouns[Math.floor(Math.random() * nouns.length)]}`
   }
 
   const handleSave = async () => {
@@ -78,8 +72,6 @@ export default function Profile() {
         full_name: displayName,
         avatar_url: selectedAvatar,
         bio,
-        is_anonymous: isAnonymous,
-        anonymous_name: anonymousName,
         updated_at: new Date().toISOString()
       }
 
@@ -96,10 +88,20 @@ export default function Profile() {
           }
         }
       } else {
-        await supabase
-          .from('profiles')
+        // Update users table
+        const { error: dbError } = await supabase
+          .from('users')
           .update(profileData)
           .eq('id', user.id)
+        
+        if (dbError) {
+          console.error('Error updating users table:', dbError)
+        }
+        
+        // Also update auth user metadata
+        await supabase.auth.updateUser({
+          data: profileData
+        })
       }
 
       setSaved(true)
@@ -251,56 +253,6 @@ export default function Profile() {
                 placeholder="Chia sẻ về chuyên môn, kinh nghiệm của bạn..."
                 className="w-full p-4 rounded-xl bg-gray-50 border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none resize-none h-32"
               />
-            </div>
-          )}
-
-          {/* Anonymous Mode (for students) */}
-          {!isCounselor && !isAdmin && (
-            <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-              <div className="flex items-start gap-3">
-                <div className="mt-1">
-                  <Sparkles className="text-purple-500" size={20} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-800 mb-1">
-                    Chế độ ẩn danh
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    Khi bật, tên và avatar của bạn sẽ được thay thế bằng tên ngẫu nhiên khi đăng bài trên cộng đồng
-                  </p>
-                  
-                  <div className="flex items-center gap-3 mb-3">
-                    <button
-                      onClick={() => setIsAnonymous(!isAnonymous)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${
-                        isAnonymous ? 'bg-purple-500' : 'bg-gray-300'
-                      }`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                        isAnonymous ? 'translate-x-7' : 'translate-x-1'
-                      }`} />
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      {isAnonymous ? 'Đang bật' : 'Đang tắt'}
-                    </span>
-                  </div>
-
-                  {isAnonymous && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">Tên ẩn danh:</span>
-                      <span className="px-3 py-1 bg-white rounded-lg text-sm font-medium text-purple-600">
-                        {anonymousName}
-                      </span>
-                      <button
-                        onClick={() => setAnonymousName(generateAnonymousName())}
-                        className="text-xs text-purple-500 hover:text-purple-700"
-                      >
-                        Đổi tên khác
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           )}
 

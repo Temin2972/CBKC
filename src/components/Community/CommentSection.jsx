@@ -33,8 +33,8 @@ export default function CommentSection({ postId, currentUser }) {
   }
 
   // Wrapper for createComment that handles moderation
-  const handleCreateComment = async (content, parentId) => {
-    const result = await createComment(content, parentId)
+  const handleCreateComment = async (content, parentId, isAnonymous = false) => {
+    const result = await createComment(content, parentId, isAnonymous)
     
     // Handle moderation result
     if (result.moderation) {

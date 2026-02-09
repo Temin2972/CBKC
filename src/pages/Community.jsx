@@ -34,7 +34,7 @@ export default function Community() {
   const [analyzing, setAnalyzing] = useState(false)
   const [activeCommentPostId, setActiveCommentPostId] = useState(null)
   const [likingPostId, setLikingPostId] = useState(null)
-  const [isAnonymous, setIsAnonymous] = useState(true) // Default to anonymous mode
+  const [isAnonymous, setIsAnonymous] = useState(false) // Default to non-anonymous
   
   // Filter and search state
   const [searchQuery, setSearchQuery] = useState('')
@@ -156,7 +156,8 @@ export default function Community() {
           image_url: imageUrl,
           pending_reason: 'Bài viết có hình ảnh cần tư vấn viên duyệt thủ công',
           status: 'pending',
-          topic: postTopic
+          topic: postTopic,
+          is_anonymous: isAnonymous
         })
 
       if (!error) {
@@ -246,7 +247,8 @@ export default function Community() {
           image_url: imageUrl,
           pending_reason: analysis.reasoning,
           status: 'pending',
-          topic: postTopic
+          topic: postTopic,
+          is_anonymous: isAnonymous
         })
 
       if (!error) {
@@ -291,7 +293,7 @@ export default function Community() {
     const { data: postData, error } = await supabase
       .from('posts')
       .insert({
-        author_id: user.id,
+        author_id: isAnonymous ? null : user.id,
         content: sanitizedContent,
         image_url: imageUrl,
         flag_level: analysis.flagLevel,

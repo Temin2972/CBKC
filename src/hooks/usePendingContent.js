@@ -57,10 +57,11 @@ export function usePendingContent() {
     try {
       if (item.content_type === 'post') {
         // Create post with topic (use override or original)
+        // If is_anonymous, set author_id to null
         const { error: postError } = await supabase
           .from('posts')
           .insert({
-            author_id: item.user_id,
+            author_id: item.is_anonymous ? null : item.user_id,
             content: item.content,
             image_url: item.image_url,
             flag_level: 0, // Approved = normal
@@ -70,11 +71,12 @@ export function usePendingContent() {
         if (postError) throw postError
       } else if (item.content_type === 'comment') {
         // Create comment
+        // If is_anonymous, set author_id to null
         const { error: commentError } = await supabase
           .from('comments')
           .insert({
             post_id: item.post_id,
-            author_id: item.user_id,
+            author_id: item.is_anonymous ? null : item.user_id,
             parent_comment_id: item.parent_comment_id,
             content: item.content,
             flag_level: 0

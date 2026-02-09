@@ -158,7 +158,7 @@ export function useComments(postId, currentUserId) {
     }
   }
 
-  const createComment = async (content, parentCommentId = null) => {
+  const createComment = async (content, parentCommentId = null, isAnonymous = false) => {
     if (!currentUserId) {
       return { 
         error: new Error('You must be logged in to comment'),
@@ -209,7 +209,8 @@ export function useComments(postId, currentUserId) {
             parent_comment_id: parentCommentId,
             content: content.trim(),
             pending_reason: analysis.reasoning,
-            status: 'pending'
+            status: 'pending',
+            is_anonymous: isAnonymous
           })
 
         if (error) throw error
@@ -234,7 +235,7 @@ export function useComments(postId, currentUserId) {
         .from('comments')
         .insert({
           post_id: postId,
-          author_id: currentUserId,
+          author_id: isAnonymous ? null : currentUserId,
           parent_comment_id: parentCommentId,
           content: content.trim(),
           flag_level: analysis.flagLevel
