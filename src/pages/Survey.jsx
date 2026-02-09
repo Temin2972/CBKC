@@ -1,13 +1,14 @@
 /**
  * Survey Page Component
  * Allows students to participate in school surveys
+ * Allows counselors/admins to create and manage surveys
  */
 import { useState, useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth'
 import { supabase, isDemoMode, getDemoState } from '../lib/supabaseClient'
 import { DEMO_SURVEYS } from '../lib/demoData'
 import Navbar from '../components/Layout/Navbar'
-import { Button, Alert } from '../components/UI'
+import { Button, Alert, Modal } from '../components/UI'
 import { 
   ClipboardList, 
   Clock, 
@@ -15,12 +16,21 @@ import {
   ChevronRight,
   Star,
   Send,
-  BarChart3
+  BarChart3,
+  Plus,
+  Trash2,
+  GripVertical,
+  Settings,
+  X,
+  Edit3,
+  ToggleLeft,
+  ToggleRight,
+  Calendar
 } from 'lucide-react'
 import { formatDistanceToNow } from '../utils/formatters'
 
 export default function Survey() {
-  const { user, id: userId } = useAuth()
+  const { user, id: userId, isCounselor } = useAuth()
   const [surveys, setSurveys] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedSurvey, setSelectedSurvey] = useState(null)
@@ -28,10 +38,27 @@ export default function Survey() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  
+  // Create/Edit survey state
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingSurvey, setEditingSurvey] = useState(null)
+  const [surveyForm, setSurveyForm] = useState({
+    title: '',
+    description: '',
+    questions: [],
+    is_active: true,
+    is_anonymous: true,
+    deadline: ''
+  })
+  const [savingSurvey, setSavingSurvey] = useState(false)
 
   useEffect(() => {
-    loadSurveys()
-  }, [])
+    if (isCounselor) {
+      loadAllSurveys()
+    } else {
+      loadSurveys()
+    }
+  }, [isCounselor])
 
   const loadSurveys = async () => {
     setLoading(true)
@@ -52,6 +79,247 @@ export default function Survey() {
       console.error('Error loading surveys:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Load all surveys for staff (including inactive)
+  const loadAllSurveys = async () => {
+    if (!isCounselor) return
+    setLoading(true)
+    try {
+      if (isDemoMode) {
+        setSurveys(DEMO_SURVEYS)
+      } else {
+        const { data, error } = await supabase
+          .from('surveys')
+          .select('*')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        setSurveys(data || [])
+      }
+    } catch (err) {
+      console.error('Error loading all surveys:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Reset survey form
+  const resetSurveyForm = () => {
+    setSurveyForm({
+      title: '',
+      description: '',
+      questions: [],
+      is_active: true,
+      is_anonymous: true,
+      deadline: ''
+    })
+    setEditingSurvey(null)
+  }
+
+  // Open create modal
+  const handleOpenCreateModal = () => {
+    resetSurveyForm()
+    setShowCreateModal(true)
+  }
+
+  // Open edit modal
+  const handleEditSurvey = (survey, e) => {
+    e.stopPropagation()
+    setEditingSurvey(survey)
+    setSurveyForm({
+      title: survey.title,
+      description: survey.description || '',
+      questions: survey.questions || [],
+      is_active: survey.is_active,
+      is_anonymous: survey.is_anonymous ?? true,
+      deadline: survey.deadline ? survey.deadline.split('T')[0] : ''
+    })
+    setShowCreateModal(true)
+  }
+
+  // Add question
+  const addQuestion = (type) => {
+    const newQuestion = {
+      id: `q${Date.now()}`,
+      type,
+      question: '',
+      ...(type === 'scale' && { 
+        scale: { min: 1, max: 5, labels: ['Rất thấp', 'Thấp', 'Trung bình', 'Cao', 'Rất cao'] }
+      }),
+      ...(type === 'multiple_choice' && { options: [''] })
+    }
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: [...prev.questions, newQuestion]
+    }))
+  }
+
+  // Update question
+  const updateQuestion = (index, field, value) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.map((q, i) => 
+        i === index ? { ...q, [field]: value } : q
+      )
+    }))
+  }
+
+  // Update scale labels
+  const updateScaleLabels = (questionIndex, labelIndex, value) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.map((q, i) => {
+        if (i !== questionIndex) return q
+        const newLabels = [...(q.scale?.labels || [])]
+        newLabels[labelIndex] = value
+        return { ...q, scale: { ...q.scale, labels: newLabels } }
+      })
+    }))
+  }
+
+  // Add option to multiple choice
+  const addOption = (questionIndex) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.map((q, i) => 
+        i === questionIndex 
+          ? { ...q, options: [...(q.options || []), ''] }
+          : q
+      )
+    }))
+  }
+
+  // Update option
+  const updateOption = (questionIndex, optionIndex, value) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.map((q, i) => {
+        if (i !== questionIndex) return q
+        const newOptions = [...(q.options || [])]
+        newOptions[optionIndex] = value
+        return { ...q, options: newOptions }
+      })
+    }))
+  }
+
+  // Remove option
+  const removeOption = (questionIndex, optionIndex) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.map((q, i) => {
+        if (i !== questionIndex) return q
+        return { ...q, options: q.options.filter((_, oi) => oi !== optionIndex) }
+      })
+    }))
+  }
+
+  // Remove question
+  const removeQuestion = (index) => {
+    setSurveyForm(prev => ({
+      ...prev,
+      questions: prev.questions.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Save survey
+  const handleSaveSurvey = async () => {
+    // Validate
+    if (!surveyForm.title.trim()) {
+      setError('Vui lòng nhập tiêu đề khảo sát')
+      return
+    }
+    if (surveyForm.questions.length === 0) {
+      setError('Vui lòng thêm ít nhất một câu hỏi')
+      return
+    }
+    const emptyQuestion = surveyForm.questions.find(q => !q.question.trim())
+    if (emptyQuestion) {
+      setError('Vui lòng nhập nội dung cho tất cả các câu hỏi')
+      return
+    }
+
+    setSavingSurvey(true)
+    setError('')
+
+    try {
+      if (isDemoMode) {
+        // Demo mode - just update local state
+        const newSurvey = {
+          id: editingSurvey?.id || `survey-${Date.now()}`,
+          ...surveyForm,
+          deadline: surveyForm.deadline ? new Date(surveyForm.deadline).toISOString() : null,
+          created_by: userId,
+          created_at: editingSurvey?.created_at || new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          responses_count: editingSurvey?.responses_count || 0
+        }
+
+        if (editingSurvey) {
+          setSurveys(prev => prev.map(s => s.id === editingSurvey.id ? newSurvey : s))
+        } else {
+          setSurveys(prev => [newSurvey, ...prev])
+        }
+      } else {
+        const surveyData = {
+          title: surveyForm.title.trim(),
+          description: surveyForm.description.trim() || null,
+          questions: surveyForm.questions,
+          is_active: surveyForm.is_active,
+          is_anonymous: surveyForm.is_anonymous,
+          deadline: surveyForm.deadline ? new Date(surveyForm.deadline).toISOString() : null,
+          created_by: userId
+        }
+
+        if (editingSurvey) {
+          const { error } = await supabase
+            .from('surveys')
+            .update(surveyData)
+            .eq('id', editingSurvey.id)
+          if (error) throw error
+        } else {
+          const { error } = await supabase
+            .from('surveys')
+            .insert(surveyData)
+          if (error) throw error
+        }
+
+        // Reload surveys
+        if (isCounselor) {
+          await loadAllSurveys()
+        } else {
+          await loadSurveys()
+        }
+      }
+
+      setShowCreateModal(false)
+      resetSurveyForm()
+    } catch (err) {
+      console.error('Error saving survey:', err)
+      setError('Có lỗi xảy ra. Vui lòng thử lại.')
+    } finally {
+      setSavingSurvey(false)
+    }
+  }
+
+  // Toggle survey active status
+  const toggleSurveyActive = async (survey, e) => {
+    e.stopPropagation()
+    try {
+      if (!isDemoMode) {
+        const { error } = await supabase
+          .from('surveys')
+          .update({ is_active: !survey.is_active })
+          .eq('id', survey.id)
+        if (error) throw error
+      }
+      
+      setSurveys(prev => prev.map(s => 
+        s.id === survey.id ? { ...s, is_active: !s.is_active } : s
+      ))
+    } catch (err) {
+      console.error('Error toggling survey:', err)
     }
   }
 
@@ -213,6 +481,17 @@ export default function Survey() {
           <p className="text-gray-600">
             Ý kiến của bạn giúp chúng tôi cải thiện dịch vụ
           </p>
+          
+          {/* Create Survey Button for Counselors */}
+          {isCounselor && (
+            <Button
+              onClick={handleOpenCreateModal}
+              icon={Plus}
+              className="mt-4"
+            >
+              Tạo khảo sát mới
+            </Button>
+          )}
         </header>
 
         {/* Survey Detail View */}
@@ -296,41 +575,338 @@ export default function Survey() {
               </div>
             ) : (
               surveys.map(survey => (
-                <button
+                <div
                   key={survey.id}
-                  onClick={() => handleOpenSurvey(survey)}
-                  className="w-full bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 p-5 text-left hover:shadow-lg hover:border-teal-200 transition-all group"
+                  className={`w-full bg-white/70 backdrop-blur-sm rounded-2xl border p-5 text-left hover:shadow-lg transition-all group ${
+                    survey.is_active ? 'border-gray-100 hover:border-teal-200' : 'border-orange-200 bg-orange-50/50'
+                  }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-teal-50 rounded-xl flex items-center justify-center group-hover:bg-teal-100 transition-colors">
-                      <ClipboardList size={24} className="text-teal-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-teal-600 transition-colors">
-                        {survey.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {survey.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          Hạn: {new Date(survey.deadline).toLocaleDateString('vi-VN')}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <BarChart3 size={14} />
-                          {survey.responses_count || 0} lượt tham gia
-                        </span>
+                  <button
+                    onClick={() => handleOpenSurvey(survey)}
+                    className="w-full text-left"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                        survey.is_active 
+                          ? 'bg-teal-50 group-hover:bg-teal-100' 
+                          : 'bg-orange-100'
+                      }`}>
+                        <ClipboardList size={24} className={survey.is_active ? 'text-teal-600' : 'text-orange-600'} />
                       </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className={`font-semibold group-hover:text-teal-600 transition-colors ${
+                            survey.is_active ? 'text-gray-800' : 'text-gray-600'
+                          }`}>
+                            {survey.title}
+                          </h3>
+                          {!survey.is_active && (
+                            <span className="px-2 py-0.5 bg-orange-200 text-orange-700 text-xs rounded-full">
+                              Tạm dừng
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {survey.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          {survey.deadline && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={14} />
+                              Hạn: {new Date(survey.deadline).toLocaleDateString('vi-VN')}
+                            </span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <BarChart3 size={14} />
+                            {survey.responses_count || 0} lượt tham gia
+                          </span>
+                        </div>
+                      </div>
+                      <ChevronRight size={20} className="text-gray-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all" />
                     </div>
-                    <ChevronRight size={20} className="text-gray-400 group-hover:text-teal-500 group-hover:translate-x-1 transition-all" />
-                  </div>
-                </button>
+                  </button>
+                  
+                  {/* Counselor Actions */}
+                  {isCounselor && (
+                    <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={(e) => handleEditSurvey(survey, e)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                      >
+                        <Edit3 size={14} />
+                        Chỉnh sửa
+                      </button>
+                      <button
+                        onClick={(e) => toggleSurveyActive(survey, e)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                          survey.is_active
+                            ? 'text-orange-600 hover:bg-orange-50'
+                            : 'text-teal-600 hover:bg-teal-50'
+                        }`}
+                      >
+                        {survey.is_active ? (
+                          <>
+                            <ToggleRight size={14} />
+                            Tạm dừng
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft size={14} />
+                            Kích hoạt
+                          </>
+                        )}
+                      </button>
+                      <span className="ml-auto text-xs text-gray-400">
+                        {survey.questions?.length || 0} câu hỏi
+                      </span>
+                    </div>
+                  )}
+                </div>
               ))
             )}
           </div>
         )}
       </div>
+
+      {/* Create/Edit Survey Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          resetSurveyForm()
+          setError('')
+        }}
+        title={editingSurvey ? 'Chỉnh sửa khảo sát' : 'Tạo khảo sát mới'}
+        size="xl"
+      >
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+          {error && <Alert variant="error">{error}</Alert>}
+          
+          {/* Basic Info */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tiêu đề khảo sát *
+              </label>
+              <input
+                type="text"
+                value={surveyForm.title}
+                onChange={(e) => setSurveyForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="VD: Khảo sát Sức khỏe Tâm lý Học kỳ 1"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mô tả
+              </label>
+              <textarea
+                value={surveyForm.description}
+                onChange={(e) => setSurveyForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Mô tả ngắn về khảo sát..."
+                rows={2}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none resize-none"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <Calendar size={14} className="inline mr-1" />
+                  Hạn chót (tùy chọn)
+                </label>
+                <input
+                  type="date"
+                  value={surveyForm.deadline}
+                  onChange={(e) => setSurveyForm(prev => ({ ...prev, deadline: e.target.value }))}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={surveyForm.is_active}
+                    onChange={(e) => setSurveyForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                    className="w-4 h-4 text-teal-500 rounded border-gray-300 focus:ring-teal-500"
+                  />
+                  <span className="text-sm text-gray-700">Kích hoạt ngay</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={surveyForm.is_anonymous}
+                    onChange={(e) => setSurveyForm(prev => ({ ...prev, is_anonymous: e.target.checked }))}
+                    className="w-4 h-4 text-teal-500 rounded border-gray-300 focus:ring-teal-500"
+                  />
+                  <span className="text-sm text-gray-700">Cho phép ẩn danh</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          {/* Questions Section */}
+          <div className="border-t border-gray-200 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-medium text-gray-800">
+                Câu hỏi ({surveyForm.questions.length})
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => addQuestion('scale')}
+                  className="px-3 py-1.5 text-xs bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  + Thang điểm
+                </button>
+                <button
+                  onClick={() => addQuestion('multiple_choice')}
+                  className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  + Trắc nghiệm
+                </button>
+                <button
+                  onClick={() => addQuestion('text')}
+                  className="px-3 py-1.5 text-xs bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  + Tự luận
+                </button>
+              </div>
+            </div>
+
+            {surveyForm.questions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl">
+                <ClipboardList size={32} className="mx-auto mb-2 text-gray-300" />
+                <p>Chưa có câu hỏi nào</p>
+                <p className="text-sm">Nhấn các nút bên trên để thêm câu hỏi</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {surveyForm.questions.map((question, index) => (
+                  <div 
+                    key={question.id}
+                    className={`p-4 rounded-xl border ${
+                      question.type === 'scale' ? 'border-purple-200 bg-purple-50/50' :
+                      question.type === 'multiple_choice' ? 'border-blue-200 bg-blue-50/50' :
+                      'border-green-200 bg-green-50/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center gap-2 text-gray-400">
+                        <GripVertical size={16} />
+                        <span className="text-sm font-medium">{index + 1}</span>
+                      </div>
+                      
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            question.type === 'scale' ? 'bg-purple-200 text-purple-700' :
+                            question.type === 'multiple_choice' ? 'bg-blue-200 text-blue-700' :
+                            'bg-green-200 text-green-700'
+                          }`}>
+                            {question.type === 'scale' ? 'Thang điểm' :
+                             question.type === 'multiple_choice' ? 'Trắc nghiệm' : 'Tự luận'}
+                          </span>
+                        </div>
+                        
+                        <input
+                          type="text"
+                          value={question.question}
+                          onChange={(e) => updateQuestion(index, 'question', e.target.value)}
+                          placeholder="Nhập câu hỏi..."
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500/20 outline-none text-sm"
+                        />
+
+                        {/* Scale Options */}
+                        {question.type === 'scale' && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-500">Nhãn thang điểm (1-5):</p>
+                            <div className="grid grid-cols-5 gap-2">
+                              {[0, 1, 2, 3, 4].map(i => (
+                                <input
+                                  key={i}
+                                  type="text"
+                                  value={question.scale?.labels?.[i] || ''}
+                                  onChange={(e) => updateScaleLabels(index, i, e.target.value)}
+                                  placeholder={`${i + 1}`}
+                                  className="px-2 py-1 text-xs rounded border border-gray-200 focus:border-purple-400 outline-none text-center"
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Multiple Choice Options */}
+                        {question.type === 'multiple_choice' && (
+                          <div className="space-y-2">
+                            <p className="text-xs text-gray-500">Các lựa chọn:</p>
+                            {question.options?.map((option, optIndex) => (
+                              <div key={optIndex} className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 w-5">{optIndex + 1}.</span>
+                                <input
+                                  type="text"
+                                  value={option}
+                                  onChange={(e) => updateOption(index, optIndex, e.target.value)}
+                                  placeholder="Nhập lựa chọn..."
+                                  className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 focus:border-blue-400 outline-none"
+                                />
+                                {question.options.length > 1 && (
+                                  <button
+                                    onClick={() => removeOption(index, optIndex)}
+                                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => addOption(index)}
+                              className="text-xs text-blue-600 hover:text-blue-700"
+                            >
+                              + Thêm lựa chọn
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => removeQuestion(index)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowCreateModal(false)
+              resetSurveyForm()
+              setError('')
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSaveSurvey}
+            loading={savingSurvey}
+            disabled={savingSurvey}
+            icon={editingSurvey ? CheckCircle2 : Plus}
+          >
+            {editingSurvey ? 'Cập nhật' : 'Tạo khảo sát'}
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }
