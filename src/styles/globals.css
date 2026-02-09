@@ -181,6 +181,25 @@ body {
   100% { background-position: 200% 0; }
 }
 
+/* Looping horizontal gradient for notification */
+@keyframes gradient-flow-horizontal {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient-flow {
+  background: linear-gradient(90deg, 
+    #fef3c7, /* amber-100 */
+    #fed7aa, /* orange-200 */
+    #fde68a, /* amber-200 */
+    #fdba74, /* orange-300 */
+    #fef3c7  /* amber-100 */
+  );
+  background-size: 300% 100%;
+  animation: gradient-flow-horizontal 4s ease-in-out infinite;
+}
+
 @keyframes bounce-slow {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }

@@ -133,10 +133,10 @@ export default function Home() {
 
           {/* Notification Badge */}
           {hasNewMessages && !unreadLoading && (
-            <div className="mb-8 animate-pulse">
+            <div className="mb-8">
               <Link
                 to={ROUTES.CHAT}
-                className="flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl hover:from-amber-100 hover:to-orange-100 hover:border-amber-300 hover:shadow-xl transition-all duration-500 ease-out"
+                className="flex items-center gap-4 p-4 animate-gradient-flow border-2 border-amber-300 rounded-2xl hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
               >
                 <div className="relative">
                   <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-400 rounded-xl flex items-center justify-center text-white">
@@ -162,9 +162,9 @@ export default function Home() {
               {/* Chat Card */}
               <Link
                 to={ROUTES.CHAT}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-blue-500 hover:to-indigo-600 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full opacity-0 group-hover:opacity-100 group-hover:w-[200%] group-hover:h-[200%] transition-all duration-700 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <MessageCircle size={28} />
@@ -187,9 +187,9 @@ export default function Home() {
               {/* Community Card */}
               <Link
                 to={ROUTES.COMMUNITY}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-purple-500 hover:to-pink-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full opacity-0 group-hover:opacity-100 group-hover:w-[200%] group-hover:h-[200%] transition-all duration-700 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Users size={28} />
@@ -208,9 +208,9 @@ export default function Home() {
               {/* Booking Card */}
               <Link
                 to={ROUTES.BOOKING}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-teal-500 hover:to-emerald-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-teal-100 to-emerald-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full opacity-0 group-hover:opacity-100 group-hover:w-[200%] group-hover:h-[200%] transition-all duration-700 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-teal-500 to-emerald-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <CalendarClock size={28} />
@@ -229,9 +229,9 @@ export default function Home() {
               {/* Cards (Wellbeing Messages) */}
               <Link
                 to={ROUTES.CARDS}
-                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:bg-gradient-to-br hover:from-rose-500 hover:to-pink-500 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
+                className="group relative overflow-hidden bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:border-transparent transition-all duration-500 ease-out hover:-translate-y-1"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-100 group-hover:scale-150 transition-all duration-500" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0 h-0 bg-gradient-to-br from-rose-500 to-pink-500 rounded-full opacity-0 group-hover:opacity-100 group-hover:w-[200%] group-hover:h-[200%] transition-all duration-700 ease-out" />
                 <div className="relative z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 group-hover:from-white/20 group-hover:to-white/10 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-all duration-500">
                     <Heart size={28} className="fill-current" />
