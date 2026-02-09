@@ -17,7 +17,8 @@ import {
   Bug,
   ThumbsUp,
   MessageCircle,
-  User
+  User,
+  Trash2
 } from 'lucide-react'
 
 // Tab options
@@ -57,11 +58,16 @@ export default function Feedback() {
   
   // My feedbacks (for counselors)
   const [myFeedbacks, setMyFeedbacks] = useState([])
+  
+  // All suggestions (for counselors/admins)
+  const [allSuggestions, setAllSuggestions] = useState([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
 
   useEffect(() => {
     loadCounselors()
     if (isCounselor) {
       loadMyFeedbacks()
+      loadAllSuggestions()
     }
   }, [isCounselor])
 
@@ -95,6 +101,104 @@ export default function Feedback() {
         .order('created_at', { ascending: false })
       
       if (data) setMyFeedbacks(data)
+    }
+  }
+
+  const loadAllSuggestions = async () => {
+    setLoadingSuggestions(true)
+    try {
+      if (isDemoMode) {
+        const state = getDemoState()
+        setAllSuggestions(state?.suggestions || DEMO_SUGGESTIONS)
+      } else {
+        const { data, error } = await supabase
+          .from('suggestions')
+          .select('*')
+          .order('created_at', { ascending: false })
+        
+        if (error) throw error
+        setAllSuggestions(data || [])
+      }
+    } catch (err) {
+      console.error('Error loading suggestions:', err)
+    } finally {
+      setLoadingSuggestions(false)
+    }
+  }
+
+  const updateSuggestionStatus = async (suggestionId, status) => {
+    try {
+      if (!isDemoMode) {
+        const { error } = await supabase
+          .from('suggestions')
+          .update({ status, responded_by: userId, responded_at: new Date().toISOString() })
+          .eq('id', suggestionId)
+        
+        if (error) throw error
+      }
+      
+      setAllSuggestions(prev => prev.map(s => 
+        s.id === suggestionId ? { ...s, status, responded_by: userId } : s
+      ))
+    } catch (err) {
+      console.error('Error updating suggestion:', err)
+    }
+  }
+
+  const getSuggestionTypeInfo = (type) => {
+    return SUGGESTION_TYPES.find(t => t.id === type) || SUGGESTION_TYPES[3]
+  }
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'pending':
+        return { label: 'Chờ xử lý', className: 'bg-yellow-100 text-yellow-700' }
+      case 'reviewed':
+        return { label: 'Đã xem', className: 'bg-blue-100 text-blue-700' }
+      case 'implemented':
+        return { label: 'Đã thực hiện', className: 'bg-green-100 text-green-700' }
+      case 'rejected':
+        return { label: 'Từ chối', className: 'bg-red-100 text-red-700' }
+      default:
+        return { label: status, className: 'bg-gray-100 text-gray-700' }
+    }
+  }
+
+  const deleteSuggestion = async (suggestionId) => {
+    if (!confirm('Bạn có chắc muốn xóa góp ý này?')) return
+    
+    try {
+      if (!isDemoMode) {
+        const { error } = await supabase
+          .from('suggestions')
+          .delete()
+          .eq('id', suggestionId)
+        
+        if (error) throw error
+      }
+      
+      setAllSuggestions(prev => prev.filter(s => s.id !== suggestionId))
+    } catch (err) {
+      console.error('Error deleting suggestion:', err)
+    }
+  }
+
+  const deleteSessionFeedback = async (feedbackId) => {
+    if (!confirm('Bạn có chắc muốn xóa đánh giá này?')) return
+    
+    try {
+      if (!isDemoMode) {
+        const { error } = await supabase
+          .from('feedbacks')
+          .delete()
+          .eq('id', feedbackId)
+        
+        if (error) throw error
+      }
+      
+      setMyFeedbacks(prev => prev.filter(f => f.id !== feedbackId))
+    } catch (err) {
+      console.error('Error deleting feedback:', err)
     }
   }
 
@@ -238,13 +342,22 @@ export default function Feedback() {
               <div className="space-y-4">
                 {myFeedbacks.map(fb => (
                   <div key={fb.id} className="p-4 bg-gray-50 rounded-xl">
-                    <div className="flex items-center gap-2 mb-2">
-                      {[...Array(fb.rating)].map((_, i) => (
-                        <Star key={i} size={16} className="text-amber-400 fill-current" />
-                      ))}
-                      <span className="text-sm text-gray-500 ml-2">
-                        {new Date(fb.created_at).toLocaleDateString('vi-VN')}
-                      </span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {[...Array(fb.rating)].map((_, i) => (
+                          <Star key={i} size={16} className="text-amber-400 fill-current" />
+                        ))}
+                        <span className="text-sm text-gray-500 ml-2">
+                          {new Date(fb.created_at).toLocaleDateString('vi-VN')}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => deleteSessionFeedback(fb.id)}
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Xóa đánh giá"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                     <p className="text-gray-700">{fb.comment || 'Không có nhận xét'}</p>
                     <div className="mt-2 flex gap-4 text-xs text-gray-500">
@@ -253,6 +366,100 @@ export default function Feedback() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Counselor view - Website Suggestions */}
+        {isCounselor && (
+          <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-xl p-6 mb-6">
+            <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+              <Lightbulb className="text-amber-500" size={20} />
+              Góp ý từ người dùng ({allSuggestions.length})
+            </h2>
+            {loadingSuggestions ? (
+              <div className="flex justify-center py-6">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+              </div>
+            ) : allSuggestions.length === 0 ? (
+              <p className="text-gray-500 text-center py-6">Chưa có góp ý nào</p>
+            ) : (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {allSuggestions.map(suggestion => {
+                  const typeInfo = getSuggestionTypeInfo(suggestion.type)
+                  const statusBadge = getStatusBadge(suggestion.status)
+                  const TypeIcon = typeInfo.icon
+                  
+                  return (
+                    <div key={suggestion.id} className="p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                            suggestion.type === 'bug_report' ? 'bg-red-100 text-red-600' :
+                            suggestion.type === 'feature_request' ? 'bg-blue-100 text-blue-600' :
+                            suggestion.type === 'compliment' ? 'bg-green-100 text-green-600' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            <TypeIcon size={16} />
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-700">{typeInfo.label}</span>
+                            <p className="text-xs text-gray-400">
+                              {new Date(suggestion.created_at).toLocaleString('vi-VN')}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${statusBadge.className}`}>
+                          {statusBadge.label}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-700 mb-3 whitespace-pre-wrap">{suggestion.content}</p>
+                      
+                      {/* Status Actions */}
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
+                        <button
+                          onClick={() => updateSuggestionStatus(suggestion.id, 'reviewed')}
+                          className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                            suggestion.status === 'reviewed' 
+                              ? 'bg-blue-500 text-white' 
+                              : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                          }`}
+                        >
+                          Đã xem
+                        </button>
+                        <button
+                          onClick={() => updateSuggestionStatus(suggestion.id, 'implemented')}
+                          className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                            suggestion.status === 'implemented' 
+                              ? 'bg-green-500 text-white' 
+                              : 'bg-green-50 text-green-600 hover:bg-green-100'
+                          }`}
+                        >
+                          Đã thực hiện
+                        </button>
+                        <button
+                          onClick={() => updateSuggestionStatus(suggestion.id, 'rejected')}
+                          className={`px-2 py-1 text-xs rounded-lg transition-colors ${
+                            suggestion.status === 'rejected' 
+                              ? 'bg-red-500 text-white' 
+                              : 'bg-red-50 text-red-600 hover:bg-red-100'
+                          }`}
+                        >
+                          Từ chối
+                        </button>
+                        <button
+                          onClick={() => deleteSuggestion(suggestion.id)}
+                          className="ml-auto p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Xóa góp ý"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
