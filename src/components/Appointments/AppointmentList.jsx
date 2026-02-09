@@ -14,14 +14,14 @@ import AppointmentCard from './AppointmentCard'
 
 export default function AppointmentList() {
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, role } = useAuth()
     const {
         appointments,
         loading,
         updateStatus,
         createChatFromAppointment,
         refetch
-    } = useAppointments(user?.app_metadata?.role)
+    } = useAppointments(role)
 
     const [filter, setFilter] = useState('pending')
     const [searchQuery, setSearchQuery] = useState('')

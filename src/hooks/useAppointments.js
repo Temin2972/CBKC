@@ -40,18 +40,22 @@ export function useAppointments(userRole = null) {
     const isStaff = userRole === 'counselor' || userRole === 'admin'
 
     const fetchAppointments = useCallback(async () => {
+        console.log('fetchAppointments called, isStaff:', isStaff, 'userRole:', userRole)
         if (!isStaff) {
+            console.log('Not staff, skipping fetch')
             setLoading(false)
             return
         }
 
         try {
+            console.log('Fetching appointments...')
             const { data, error } = await supabase
                 .from('appointment_requests')
                 .select('*')
                 .order('urgency_level', { ascending: false })
                 .order('created_at', { ascending: false })
 
+            console.log('Appointments result:', { data, error })
             if (error) throw error
             setAppointments(data || [])
         } catch (err) {
@@ -60,7 +64,7 @@ export function useAppointments(userRole = null) {
         } finally {
             setLoading(false)
         }
-    }, [isStaff])
+    }, [isStaff, userRole])
 
     useEffect(() => {
         fetchAppointments()
@@ -128,22 +132,25 @@ export function useAppointments(userRole = null) {
 
             if (error) throw error
 
-            // Notify all counselors
-            const { data: counselors } = await supabase
-                .from('users')
-                .select('id')
-                .in('role', ['counselor', 'admin'])
+            // Notify all counselors (only if user is logged in, skip for guests)
+            const { data: sessionData } = await supabase.auth.getSession()
+            if (sessionData?.session?.user) {
+                const { data: counselors } = await supabase
+                    .from('users')
+                    .select('id')
+                    .in('role', ['counselor', 'admin'])
 
-            if (counselors) {
-                for (const counselor of counselors) {
-                    await createNotification(
-                        counselor.id,
-                        'appointment_request',
-                        `📅 Yêu cầu đặt lịch mới${urgencyLevel >= 2 ? ' (Khẩn cấp!)' : ''}`,
-                        `${formData.full_name} yêu cầu đặt lịch tư vấn: ${timeSlotDisplay}`,
-                        '/appointments',
-                        { appointment_id: data.id, urgency_level: urgencyLevel }
-                    )
+                if (counselors) {
+                    for (const counselor of counselors) {
+                        await createNotification(
+                            counselor.id,
+                            'appointment_request',
+                            `📅 Yêu cầu đặt lịch mới${urgencyLevel >= 2 ? ' (Khẩn cấp!)' : ''}`,
+                            `${formData.full_name} yêu cầu đặt lịch tư vấn: ${timeSlotDisplay}`,
+                            '/appointments',
+                            { appointment_id: data.id, urgency_level: urgencyLevel }
+                        )
+                    }
                 }
             }
 
